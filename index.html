@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mega Shop Sim - Realistic Layering</title>
+    <title>Mega Shop Sim - Moods & Tips</title>
     <style>
         :root { --ui: #3e2723; --gold: #f1c40f; }
         body { margin: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
@@ -19,26 +19,32 @@
 
         /* Shelves */
         .shelf { position: absolute; width: 100px; z-index: 5; transition: 0.5s; }
-        .shelf.large { width: 140px; }
+        .shelf.large { width: 130px; }
         #s1 { top: 15%; left: 5%; } #s2 { top: 15%; right: 5%; }
         #s3 { top: 38%; left: 5%; } #s4 { top: 38%; right: 5%; }
         .items-grid { position: absolute; bottom: 15px; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); justify-items: center; }
 
-        /* REALISTIC LAYERING: Counters are in FRONT (z-index: 50) */
+        /* Layering Fix: Counter is in FRONT */
         .counter { position: absolute; bottom: 25%; width: 160px; z-index: 50; pointer-events: none; }
         #counter-main { left: 35%; }
         #counter-auto { right: 15%; display: none; filter: hue-rotate(90deg); }
 
-        /* Characters are BEHIND counter (z-index: 40) */
+        /* Actors BEHIND counter */
         .actor { position: absolute; height: 145px; transition: left 1s linear; z-index: 40; }
         #player { bottom: 32%; left: 35%; transform: translateX(-50%); }
         #auto-bot { bottom: 32%; right: 15%; transform: translateX(50%); display: none; }
         
-        /* Customers are in FRONT of everything (z-index: 60) */
-        .customer { bottom: 9%; left: -200px; z-index: 60 !important; }
-        .garbage { position: absolute; bottom: 12%; font-size: 1.5rem; z-index: 55; cursor: pointer; }
+        /* Customers & UI in FRONT */
+        .customer-box { position: absolute; bottom: 9%; width: 100px; height: 160px; z-index: 60; transition: left 1s linear; }
+        .cust-img { height: 145px; width: auto; }
+        
+        /* Moods & Speech Bubbles */
+        .mood { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; }
+        .speech { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); background: white; padding: 5px 10px; border-radius: 10px; font-size: 0.7rem; width: 80px; text-align: center; border: 1px solid #ccc; font-weight: bold; }
 
+        .garbage { position: absolute; bottom: 12%; font-size: 1.5rem; z-index: 55; cursor: pointer; }
         #btn-collect { position: absolute; top: 40%; left: 35%; transform: translate(-50%, -50%); background: #f39c12; color: white; padding: 12px 24px; border-radius: 50px; font-weight: bold; display: none; z-index: 200; border: 3px solid white; cursor: pointer; }
+        
         #footer { height: 10vh; background: #e1b382; display: flex; padding: 10px; border-top: 5px solid var(--ui); }
         .btn-main { flex: 1; border: none; border-radius: 10px; font-weight: bold; color: white; background: #27ae60; cursor: pointer; }
     </style>
@@ -67,7 +73,9 @@
     <div class="shelf" id="shelf4"><div class="items-grid" id="ig4"></div><img src="shelf.png" width="100%"></div>
 
     <img src="player.png" class="actor" id="player">
-    <img src="police_idle.png" class="actor" id="auto-bot"> <img src="counter.png" class="counter" id="counter-main">
+    <img src="police_idle.png" class="actor" id="auto-bot"> 
+
+    <img src="counter.png" class="counter" id="counter-main">
     <img src="counter.png" class="counter" id="counter-auto">
     
     <div id="customer-layer"></div>
@@ -83,7 +91,8 @@
 <script>
     let cash = 200, stock = 0, lvl = 1, xp = 0;
     let shelfCap = 9, maxStock = 36, cleanerActive = false;
-    let items = ["🍎", "🥛", "🍞", "🍪"];
+    const items = ["🍎", "🥛", "🍞", "🍪"];
+    const quotes = ["Good price!", "Clean shop!", "Need more stock", "Hurry up!", "Love it!", "Tip for you!"];
 
     function update() {
         document.getElementById('c-val').innerText = `$${cash}`;
@@ -119,38 +128,58 @@
     function createCustomer() {
         if (stock <= 0) return;
         const layer = document.getElementById('customer-layer');
-        const c = document.createElement('img');
+        const box = document.createElement('div');
+        box.className = "customer-box";
+        box.style.left = "-200px";
+        
         const types = ["man", "old_lady", "police"];
         const type = types[Math.floor(Math.random() * 3)];
-        c.src = `${type}_walk.png`;
-        c.className = "actor customer";
-        layer.appendChild(c);
+        
+        box.innerHTML = `
+            <div class="mood">😊</div>
+            <div class="speech" style="display:none"></div>
+            <img src="${type}_walk.png" class="cust-img">
+        `;
+        layer.appendChild(box);
 
         const isAuto = (lvl >= 2 && Math.random() > 0.5);
         const targetX = isAuto ? "80%" : "35%";
 
         setTimeout(() => {
-            c.style.left = targetX;
+            box.style.left = targetX;
             setTimeout(() => {
-                c.src = `${type}_idle.png`;
+                box.querySelector('img').src = `${type}_idle.png`;
+                
+                // Show Mood change if waiting
+                setTimeout(() => { if(box.parentNode) box.querySelector('.mood').innerText = "😐"; }, 2000);
+
                 if(isAuto) {
-                    setTimeout(() => { 
-                        cash += 50; stock--; xp += 15; 
-                        if(Math.random() > 0.6) spawnGarbage(targetX);
-                        checkLevel(); update(); leave(c, type); 
-                    }, 1500);
+                    setTimeout(() => processSale(box, type, true, targetX), 1500);
                 } else {
                     const btn = document.getElementById('btn-collect');
                     btn.style.display = 'block';
-                    btn.onclick = () => {
-                        cash += (type === "police" ? 100 : 50);
-                        stock--; xp += 20; btn.style.display = 'none';
-                        if(Math.random() > 0.5) spawnGarbage(targetX);
-                        checkLevel(); update(); leave(c, type);
-                    };
+                    btn.onclick = () => processSale(box, type, false, targetX);
                 }
             }, 1000);
         }, 100);
+    }
+
+    function processSale(box, type, isAuto, x) {
+        let tip = (Math.random() > 0.7) ? Math.floor(Math.random() * 20) : 0;
+        cash += (type === "police" ? 100 : 50) + tip;
+        stock--; xp += 20;
+        
+        document.getElementById('btn-collect').style.display = 'none';
+        
+        // Show Speech Bubble
+        const sp = box.querySelector('.speech');
+        sp.innerText = tip > 0 ? `Tip: $${tip}!` : quotes[Math.floor(Math.random() * quotes.length)];
+        sp.style.display = 'block';
+        box.querySelector('.mood').innerText = "🤩";
+
+        if(Math.random() > 0.5) spawnGarbage(x);
+        checkLevel(); update();
+        setTimeout(() => leave(box, type), 1000);
     }
 
     function spawnGarbage(x) {
@@ -167,19 +196,18 @@
         }
     }
 
-    function leave(el, type) {
-        el.src = `${type}_walk.png`;
-        el.style.left = "110%";
-        setTimeout(() => el.remove(), 1200);
+    function leave(box, type) {
+        box.querySelector('img').src = `${type}_walk.png`;
+        box.style.left = "110%";
+        setTimeout(() => box.remove(), 1200);
     }
 
-    function checkLevel() { if(xp >= 100) { xp = 0; lvl++; alert("Level Up! Auto-Counter & Rush Hour!"); update(); } }
+    function checkLevel() { if(xp >= 100) { xp = 0; lvl++; update(); } }
 
-    // Level based Spawning: More customers at Level 2
     setInterval(() => {
-        let maxCust = (lvl >= 2) ? 5 : 2;
-        if(document.querySelectorAll('.customer').length < maxCust) createCustomer();
-    }, (lvl >= 2 ? 2000 : 4000));
+        let maxCust = (lvl >= 2) ? 4 : 2;
+        if(document.querySelectorAll('.customer-box').length < maxCust) createCustomer();
+    }, (lvl >= 2 ? 3000 : 5000));
 
     document.addEventListener('click', () => { document.getElementById('bgm').play(); }, {once: true});
     update();
