@@ -3,138 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chaos Store Simulator - Duck & Stickman</title>
+    <title>Elite Megastore - Chaos Edition</title>
     <style>
-        :root { --glass: rgba(255, 255, 255, 0.15); --gold: #f1c40f; }
-        body { margin: 0; font-family: 'Poppins', sans-serif; background: #121212; color: white; overflow: hidden; }
+        :root { --glass: rgba(0, 0, 0, 0.6); --gold: #f1c40f; --neon: #00f2ff; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #000; color: white; overflow: hidden; }
 
-        /* Translucent Glass HUD */
+        /* Neon Glass HUD */
         #hud {
-            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-            width: 90%; display: flex; justify-content: space-around; padding: 15px;
-            background: var(--glass); backdrop-filter: blur(15px); border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1); z-index: 1000;
+            position: absolute; top: 15px; width: 95%; left: 2.5%; display: flex; 
+            justify-content: space-around; padding: 12px;
+            background: var(--glass); backdrop-filter: blur(20px); border-radius: 15px;
+            border: 1px solid rgba(0,242,255,0.3); z-index: 1000; box-shadow: 0 0 15px rgba(0,242,255,0.2);
         }
-        .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--gold); }
+        .stat { text-align: center; }
+        .stat b { display: block; font-size: 0.7rem; color: var(--neon); text-transform: uppercase; }
 
         #stage {
             position: relative; height: 100vh; width: 100%;
-            background: linear-gradient(180deg, #2c3e50, #000000);
+            background: linear-gradient(to bottom, #1e3c72, #2a5298, #4e342e 50%);
+            transition: 2s;
         }
 
-        /* Shelves */
-        .shelf { position: absolute; width: 140px; height: 100px; background: url('shelf.png') no-repeat bottom/contain; z-index: 50; }
+        /* Rain Animation */
+        #rain { position: absolute; width: 100%; height: 50%; pointer-events: none; z-index: 100; display: none; }
+        .drop { position: absolute; background: rgba(255,255,255,0.3); width: 2px; height: 15px; top: -20px; animation: fall linear infinite; }
+        @keyframes fall { to { transform: translateY(500px); } }
+
+        /* Blinking Shelves for Low Stock */
+        @keyframes blink { 50% { box-shadow: 0 0 20px red; border: 2px solid red; } }
+        .shelf { position: absolute; width: 140px; height: 100px; background: url('shelf.png') no-repeat bottom/contain; z-index: 50; border-radius: 10px; }
+        .low-stock { animation: blink 0.5s infinite; }
+        
         #s1 { top:20%; left:10%; } #s2 { top:20%; right:10%; }
         #s3 { top:45%; left:10%; } #s4 { top:45%; right:10%; }
-        .item-grid { display: grid; grid-template-columns: repeat(3, 1fr); position: absolute; bottom: 25px; width: 100%; text-align: center; }
 
-        /* Actors */
-        .actor { position: absolute; height: 130px; z-index: 400; transition: all 1s ease; }
+        /* New Pets */
+        #duck { position: absolute; bottom: 35%; font-size: 2rem; z-index: 350; transition: left 12s linear; }
+        #dog { position: absolute; bottom: 28%; left: 5%; font-size: 2rem; z-index: 350; }
+
+        .actor { position: absolute; height: 140px; z-index: 400; transition: all 1s ease; }
         #player { bottom: 33%; left: 35%; transform: translateX(-50%); }
-        #auto-staff { bottom: 33%; right: 15%; display: none; filter: hue-rotate(200deg); }
-        .counter { position: absolute; bottom: 25%; width: 160px; z-index: 500; }
+        .counter { position: absolute; bottom: 25%; width: 170px; z-index: 500; }
 
-        /* The Duck 🦆 */
-        #duck { position: absolute; bottom: 35%; font-size: 2rem; z-index: 350; transition: left 10s linear; }
-
-        /* Stickman Thief 🏃‍♂️ */
-        .stickman { position: absolute; bottom: 8%; font-size: 3rem; z-index: 600; cursor: crosshair; }
-
-        /* Popups */
+        /* Receipt Glass UI */
         #receipt {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            background: white; color: black; padding: 20px; border-radius: 15px;
-            display: none; z-index: 2000; text-align: center; width: 180px; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            background: rgba(255,255,255,0.95); color: #222; padding: 25px; border-radius: 20px;
+            display: none; z-index: 2000; text-align: center; width: 220px;
+            border: 5px solid var(--neon);
         }
 
         #footer { position: absolute; bottom: 0; width: 100%; display: flex; padding: 15px; background: var(--glass); backdrop-filter: blur(10px); z-index: 1001; box-sizing: border-box; }
-        .btn { flex: 1; margin: 0 5px; padding: 15px; border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; transition: 0.3s; }
-        .btn-refill { background: #27ae60; } .btn-upgrade { background: #8e44ad; }
+        .btn { flex: 1; margin: 0 8px; padding: 15px; border: none; border-radius: 15px; font-weight: bold; color: white; cursor: pointer; }
+        .btn-green { background: #2ecc71; box-shadow: 0 4px #27ae60; }
+        .btn-blue { background: #3498db; box-shadow: 0 4px #2980b9; }
+
+        /* Chaos Text */
+        .chaos-msg { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); color: var(--gold); font-size: 2rem; font-weight: 900; z-index: 1100; display: none; text-shadow: 2px 2px #000; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div>Cash: <span id="c-val" class="stat-val">$300</span></div>
-    <div>Lvl: <span id="l-val" class="stat-val">1</span></div>
-    <div>Stock: <span id="s-val" class="stat-val">0/36</span></div>
+    <div class="stat"><b>Capital</b><span id="c-val" class="stat-val">$300</span></div>
+    <div class="stat"><b>Stock</b><span id="s-val" class="stat-val">0/36</span></div>
+    <div class="stat"><b>Weather</b><span id="w-val" class="stat-val">Clear</span></div>
+    <div class="stat"><b>Level</b><span id="l-val" class="stat-val">1</span></div>
 </div>
 
 <div id="stage">
+    <div id="rain"></div>
+    <div id="chaos-box" class="chaos-msg">FLASH SALE!</div>
+    
     <div id="duck">🦆</div>
+    <div id="dog">🐕</div>
 
-    <div id="s1" class="shelf"><div class="item-grid" id="ig1"></div></div>
-    <div id="s2" class="shelf"><div class="item-grid" id="ig2"></div></div>
-    <div id="s3" class="shelf"><div class="item-grid" id="ig3"></div></div>
-    <div id="s4" class="shelf"><div class="item-grid" id="ig4"></div></div>
+    <div id="s1" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig1"></div></div>
+    <div id="s2" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig2"></div></div>
+    <div id="s3" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig3"></div></div>
+    <div id="s4" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig4"></div></div>
 
     <img src="player.png" id="player" class="actor">
-    <img src="player.png" id="auto-staff" class="actor">
-
     <img src="counter.png" class="counter" style="left:35%;">
-    <img src="counter.png" id="c-auto" class="counter" style="right:15%; display:none;">
 
     <div id="cust-layer"></div>
 
     <div id="receipt">
-        <h3>RECEIPT</h3>
-        <p id="rec-info">Item: 🍎</p>
-        <h2 id="rec-total">$60</h2>
-        <button onclick="finishBilling()" class="btn btn-refill" style="width:100%">COLLECT CASH</button>
+        <h2 style="margin:0">BILLING</h2>
+        <p id="rec-info" style="font-size:1.2rem">Item: 🍎</p>
+        <hr>
+        <h1 id="rec-total">$60</h1>
+        <button onclick="finishBilling()" class="btn btn-green" style="width:100%">CASH OUT</button>
     </div>
 </div>
 
 <div id="footer">
-    <button class="btn btn-refill" onclick="refill()">Order Stock ($50)</button>
-    <button class="btn btn-upgrade" onclick="hireStaff()">Hire Staff ($200)</button>
+    <button class="btn btn-green" onclick="refill()">Order Supplies ($50)</button>
+    <button class="btn btn-blue" onclick="toggleRain()">Weather Machine</button>
 </div>
 
 <script>
-    let cash = 300, stock = 0, lvl = 1, xp = 0, hasStaff = false;
+    let cash = 300, stock = 0, lvl = 1, isRaining = false;
     const items = ["🍎", "🥛", "🍞", "🍕", "🍪", "🍩"];
     let activeCust = null;
 
     function update() {
         document.getElementById('c-val').innerText = `$${cash}`;
-        document.getElementById('l-val').innerText = lvl;
         document.getElementById('s-val').innerText = `${stock}/36`;
+        document.getElementById('l-val').innerText = lvl;
+        
+        // Stock Low Warning
         for(let i=1; i<=4; i++) {
+            const sh = document.getElementById('s'+i);
+            if(stock < 5) sh.classList.add('low-stock');
+            else sh.classList.remove('low-stock');
+            
             const g = document.getElementById(`ig${i}`); g.innerHTML = "";
             let start = (i-1)*9; let end = Math.min(stock, i*9);
-            for(let j=start; j<end; j++) g.innerHTML += `<span>${items[j%items.length]}</span>`;
+            for(let j=start; j<end; j++) g.innerHTML += `<span>${items[j%6]}</span>`;
         }
     }
 
-    // Duck Movement 🦆
-    function moveDuck() {
-        const d = document.getElementById('duck');
-        d.style.left = "-50px";
-        setTimeout(() => { d.style.left = "110%"; }, 100);
-        setTimeout(moveDuck, 15000);
+    // Weather System ⛈️
+    function toggleRain() {
+        isRaining = !isRaining;
+        const r = document.getElementById('rain');
+        const wVal = document.getElementById('w-val');
+        if(isRaining) {
+            r.style.display = 'block';
+            wVal.innerText = "Rainy (Tax+)";
+            wVal.style.color = "#00f2ff";
+            createRaindrops();
+        } else {
+            r.style.display = 'none';
+            wVal.innerText = "Clear";
+            wVal.style.color = "white";
+        }
     }
 
-    // Stickman Thief Logic 🏃‍♂️
-    function spawnThief() {
-        if(Math.random() > 0.3) return;
-        const thief = document.createElement('div');
-        thief.className = "stickman";
-        thief.innerText = "🏃‍♂️💨";
-        thief.style.left = "30%";
-        document.getElementById('stage').appendChild(thief);
+    function createRaindrops() {
+        const rain = document.getElementById('rain');
+        rain.innerHTML = "";
+        for(let i=0; i<30; i++) {
+            let drop = document.createElement('div');
+            drop.className = "drop";
+            drop.style.left = Math.random() * 100 + "%";
+            drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + "s";
+            rain.appendChild(drop);
+        }
+    }
 
-        thief.onclick = () => {
-            cash += 50; 
-            thief.innerText = "😵";
-            alert("You caught the thief! Reward: $50");
-            setTimeout(() => thief.remove(), 500);
-            update();
-        };
-
-        setTimeout(() => {
-            thief.style.transition = "left 2s linear";
-            thief.style.left = "-100px";
-            setTimeout(() => { if(thief.parentNode) { thief.remove(); cash -= 20; update(); }}, 2000);
-        }, 1000);
+    // Animal AI 🦆🐕
+    function movePets() {
+        const d = document.getElementById('duck');
+        d.style.left = "-50px";
+        setTimeout(() => d.style.left = "110%", 100);
+        
+        const dog = document.getElementById('dog');
+        setInterval(() => {
+            dog.style.transform = `scaleX(${Math.random() > 0.5 ? 1 : -1})`;
+        }, 3000);
     }
 
     function refill() { if(cash >= 50 && stock < 36) { cash -= 50; stock += 12; update(); } }
@@ -143,57 +171,40 @@
         if(stock <= 0 || document.querySelectorAll('.cust-box').length > 3) return;
         const layer = document.getElementById('cust-layer');
         const box = document.createElement('div');
+        box.className = "cust-box";
         box.style.cssText = "position:absolute; bottom:8%; left:-100px; z-index:600; transition:all 1s;";
         const type = ["man", "old_lady", "police"][Math.floor(Math.random()*3)];
         box.innerHTML = `<img src="${type}_walk.png" style="height:130px;">`;
         layer.appendChild(box);
 
         setTimeout(() => {
-            box.style.left = (Math.random() > 0.5 ? "15%" : "80%"); // Go to shelves
+            box.style.left = (Math.random() > 0.5 ? "15%" : "80%"); // To Shelves
             setTimeout(() => {
-                const item = items[Math.floor(Math.random()*items.length)];
+                const item = items[Math.floor(Math.random()*6)];
                 stock--; update();
-                const isAuto = (hasStaff && Math.random() > 0.5);
-                box.style.left = isAuto ? "80%" : "35%"; // Go to counter
+                box.style.left = "35%"; // To Counter
                 setTimeout(() => {
-                    if(isAuto) {
-                        cash += 60; xp += 20; leave(box, type); update();
-                    } else {
-                        activeCust = { el: box, type: type, item: item };
-                        document.getElementById('receipt').style.display = "block";
-                        document.getElementById('rec-info').innerText = "Bought: " + item;
-                    }
+                    activeCust = { el: box, type: type, item: item };
+                    document.getElementById('receipt').style.display = "block";
+                    document.getElementById('rec-info').innerText = "Bought: " + item;
+                    let price = isRaining ? 100 : 60;
+                    document.getElementById('rec-total').innerText = "$" + price;
                 }, 1000);
             }, 1000);
         }, 100);
     }
 
     function finishBilling() {
-        cash += 60; xp += 25;
+        let price = isRaining ? 100 : 60;
+        cash += price;
         document.getElementById('receipt').style.display = "none";
-        leave(activeCust.el, activeCust.type);
-        activeCust = null;
-        if(xp >= 100) { xp=0; lvl++; alert("LEVEL UP!"); }
+        activeCust.el.style.left = "110%";
+        setTimeout(() => activeCust.el.remove(), 1200);
         update();
     }
 
-    function leave(el, type) {
-        el.style.left = "110%";
-        setTimeout(() => el.remove(), 1200);
-    }
-
-    function hireStaff() {
-        if(cash >= 200) {
-            cash -= 200; hasStaff = true;
-            document.getElementById('auto-staff').style.display = "block";
-            document.getElementById('c-auto').style.display = "block";
-            update();
-        }
-    }
-
     setInterval(spawn, 5000);
-    setInterval(spawnThief, 8000);
-    moveDuck();
+    movePets();
     update();
 </script>
 </body>
