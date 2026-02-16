@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - GitHub Build</title>
+    <title>Shop Simulator - Fixed Links</title>
     <style>
         body {
             margin: 0;
@@ -19,7 +19,7 @@
         #game-container {
             width: 100vw;
             height: 100vh;
-            background: #2c3e50; /* Shop Wall */
+            background: #2c3e50;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -27,7 +27,6 @@
             align-items: center;
         }
 
-        /* Floor */
         .floor {
             position: absolute;
             bottom: 0;
@@ -38,7 +37,6 @@
             z-index: 1;
         }
 
-        /* Counter */
         .counter {
             position: absolute;
             bottom: 28%;
@@ -49,7 +47,7 @@
             z-index: 10;
         }
 
-        /* PLAYER: Using player.png from GitHub */
+        /* Player image from GitHub */
         #player-sprite {
             position: absolute;
             bottom: 40%; 
@@ -58,7 +56,7 @@
             image-rendering: pixelated;
         }
 
-        /* CUSTOMER: Using GitHub files */
+        /* Customer image - spelling fixed */
         #customer-sprite {
             position: absolute;
             bottom: 15%;
@@ -69,13 +67,12 @@
             image-rendering: pixelated;
         }
 
-        /* UI Panel: Skin Color */
         #ui-panel {
             position: absolute;
             bottom: 0;
             width: 100%;
             height: 160px;
-            background: #e1b382; 
+            background: #e1b382; /* Skin color UI */
             border-top: 8px solid #5d4037;
             display: flex;
             justify-content: center;
@@ -106,11 +103,7 @@
             color: white;
             text-transform: uppercase;
             box-shadow: 0 6px #a04500;
-            transition: 0.1s;
         }
-
-        #refill-btn { background: #d35400; }
-        #upgrade-btn { background: #27ae60; box-shadow: 0 6px #1e8449; }
 
         #bill-btn { 
             position: absolute; 
@@ -132,7 +125,7 @@
 <body>
 
 <div id="start-overlay">
-    <h1 style="color: #f1c40f; font-size: 50px;">🏪 PIXEL SHOP</h1>
+    <h1 style="color: #f1c40f;">🏪 SHOP SIMULATOR</h1>
     <button class="game-btn" style="background: #27ae60; box-shadow: 0 6px #1e8449;" onclick="startGame()">OPEN SHOP</button>
 </div>
 
@@ -140,23 +133,20 @@
     <div class="floor"></div>
     <img src="player.png" id="player-sprite">
     <div class="counter"></div>
-    <img src="lady_customar.png" id="customer-sprite">
+    <img src="ladycustomar.png" id="customer-sprite">
     
     <div id="ui-panel">
         <button id="bill-btn" class="game-btn" onclick="processBill()">BILL PLEASE! 🧾</button>
-        
         <div class="stat-box">CASH: $<span id="cash">0</span></div>
         <div class="stat-box">STOCK: <span id="stock">0</span>/5</div>
-
-        <button id="refill-btn" class="game-btn" onclick="refill()">REFILL</button>
-        <button id="upgrade-btn" class="game-btn" onclick="upgrade()">UPGRADE</button>
+        <button class="game-btn" style="background: #d35400;" onclick="refill()">REFILL</button>
     </div>
 </div>
 
 <script>
     let cash = 0, stock = 0, isWaiting = false;
-    // GitHub files list
-    const customerImages = ["lady_customar.png", "it_man.png"];
+    // Filenames must match GitHub exactly
+    const customerImages = ["ladycustomar.png", "it_man.png"];
 
     function startGame() {
         document.getElementById('start-overlay').style.display = 'none';
@@ -168,10 +158,7 @@
     function spawnCustomer() {
         isWaiting = true;
         const cust = document.getElementById('customer-sprite');
-        
-        // Randomly pick a customer from your GitHub files
         cust.src = customerImages[Math.floor(Math.random() * customerImages.length)];
-        
         cust.style.left = "40%"; 
         setTimeout(() => {
             document.getElementById('bill-btn').style.display = "block";
@@ -183,7 +170,6 @@
         stock--;
         updateUI();
         document.getElementById('bill-btn').style.display = "none";
-        
         const cust = document.getElementById('customer-sprite');
         cust.style.left = "110%";
         setTimeout(() => {
@@ -201,14 +187,6 @@
             if (cash >= 50) cash -= 50;
             stock = 5;
             updateUI();
-        }
-    }
-
-    function upgrade() {
-        if (cash >= 200) {
-            cash -= 200;
-            updateUI();
-            alert("Upgrade Successful!");
         }
     }
 
