@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Fixed Links</title>
+    <title>Shop Simulator - Racks Added</title>
     <style>
         body {
             margin: 0;
@@ -19,7 +19,7 @@
         #game-container {
             width: 100vw;
             height: 100vh;
-            background: #2c3e50;
+            background: #2c3e50; /* Shop Wall */
             position: relative;
             display: flex;
             flex-direction: column;
@@ -27,6 +27,48 @@
             align-items: center;
         }
 
+        /* --- RACKS / SHELVES (Added behind player) --- */
+        .shelf-container {
+            position: absolute;
+            top: 15%;
+            width: 80%;
+            display: flex;
+            justify-content: space-around;
+            z-index: 2;
+        }
+
+        .rack {
+            width: 300px;
+            height: 180px;
+            background: #5d4037; /* Wooden shelf color */
+            border: 6px solid #4a332a;
+            display: grid;
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            padding: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        .shelf-row {
+            border-bottom: 4px solid #4a332a;
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            padding-bottom: 5px;
+        }
+
+        /* Items on shelf */
+        .item-pixel {
+            width: 30px;
+            height: 40px;
+            background: #e74c3c;
+            border-radius: 4px;
+            box-shadow: 2px 2px 0 #c0392b;
+        }
+        .item-pixel.blue { background: #3498db; box-shadow: 2px 2px 0 #2980b9; }
+        .item-pixel.green { background: #2ecc71; box-shadow: 2px 2px 0 #27ae60; }
+
+        /* Floor */
         .floor {
             position: absolute;
             bottom: 0;
@@ -37,6 +79,7 @@
             z-index: 1;
         }
 
+        /* Counter */
         .counter {
             position: absolute;
             bottom: 28%;
@@ -47,7 +90,7 @@
             z-index: 10;
         }
 
-        /* Player image from GitHub */
+        /* PLAYER: player.png */
         #player-sprite {
             position: absolute;
             bottom: 40%; 
@@ -56,7 +99,7 @@
             image-rendering: pixelated;
         }
 
-        /* Customer image - spelling fixed */
+        /* CUSTOMER: ladycustomar.png */
         #customer-sprite {
             position: absolute;
             bottom: 15%;
@@ -67,12 +110,13 @@
             image-rendering: pixelated;
         }
 
+        /* UI Panel */
         #ui-panel {
             position: absolute;
             bottom: 0;
             width: 100%;
             height: 160px;
-            background: #e1b382; /* Skin color UI */
+            background: #e1b382; 
             border-top: 8px solid #5d4037;
             display: flex;
             justify-content: center;
@@ -130,6 +174,25 @@
 </div>
 
 <div id="game-container">
+    <div class="shelf-container">
+        <div class="rack">
+            <div class="shelf-row">
+                <div class="item-pixel"></div><div class="item-pixel blue"></div><div class="item-pixel green"></div>
+            </div>
+            <div class="shelf-row">
+                <div class="item-pixel green"></div><div class="item-pixel"></div><div class="item-pixel blue"></div>
+            </div>
+        </div>
+        <div class="rack">
+            <div class="shelf-row">
+                <div class="item-pixel blue"></div><div class="item-pixel green"></div><div class="item-pixel"></div>
+            </div>
+            <div class="shelf-row">
+                <div class="item-pixel"></div><div class="item-pixel blue"></div><div class="item-pixel green"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="floor"></div>
     <img src="player.png" id="player-sprite">
     <div class="counter"></div>
@@ -145,7 +208,6 @@
 
 <script>
     let cash = 0, stock = 0, isWaiting = false;
-    // Filenames must match GitHub exactly
     const customerImages = ["ladycustomar.png", "it_man.png"];
 
     function startGame() {
