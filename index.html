@@ -3,276 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Shop Manager Pro</title>
+    <title>Elite Shop Manager - Pro Max</title>
     <style>
         :root { 
-            --glass: rgba(255, 255, 255, 0.1);
+            --glass: rgba(0, 0, 0, 0.4);
             --gold: #ffcc00;
-            --night-bg: #1a1a2e;
-            --day-bg: #3498db;
+            --accent: #00d2ff;
         }
 
         body { 
-            margin: 0; font-family: 'Poppins', sans-serif; 
+            margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; 
             background: #121212; color: white; overflow: hidden; 
-            user-select: none; transition: background 2s ease;
+            user-select: none;
         }
 
         /* Modern Glass UI */
         #hud {
             position: absolute; top: 0; width: 100%; display: flex; 
             justify-content: space-around; padding: 15px 0;
-            background: var(--glass); backdrop-filter: blur(10px);
+            background: var(--glass); backdrop-filter: blur(15px);
             border-bottom: 2px solid rgba(255,255,255,0.1); z-index: 1000;
         }
         .stat-box { text-align: center; }
-        .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; }
-        .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--gold); }
+        .stat-label { font-size: 0.6rem; text-transform: uppercase; color: #bbb; letter-spacing: 1px; }
+        .stat-val { font-size: 1.2rem; font-weight: 800; color: var(--gold); }
 
-        /* Game Stage with Lighting */
-        #game-canvas {
+        /* Game Stage */
+        #stage {
             position: relative; height: 100vh; width: 100%;
-            background: linear-gradient(to bottom, var(--day-bg) 0%, #2980b9 50%, #795548 50%);
-            transition: filter 3s ease;
+            background: linear-gradient(to bottom, #3498db 0%, #2980b9 50%, #5d4037 50%);
+            transition: filter 2s ease;
         }
-        .night-mode #game-canvas { filter: brightness(0.6) saturate(1.2); }
+        .night #stage { filter: brightness(0.5) contrast(1.2); }
 
-        /* Professional Shelves */
-        .shelf-unit {
-            position: absolute; width: 120px; height: 100px;
-            background: url('shelf.png') no-repeat center bottom/contain;
-            z-index: 50; filter: drop-shadow(0 10px 5px rgba(0,0,0,0.3));
+        /* Shelves with 9-item grid */
+        .shelf {
+            position: absolute; width: 110px; height: 90px;
+            background: url('shelf.png') no-repeat center bottom/contain; z-index: 50;
         }
         .item-grid {
             display: grid; grid-template-columns: repeat(3, 1fr);
-            position: absolute; bottom: 20px; width: 100%; padding: 5px;
+            position: absolute; bottom: 22px; width: 100%; padding: 4px;
         }
-        .item-grid span { font-size: 1.2rem; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); }
+        .item-grid span { font-size: 1.1rem; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); }
 
-        /* Layered World */
-        .counter-desk { position: absolute; bottom: 25%; width: 180px; z-index: 500; }
-        #player { position: absolute; bottom: 33%; z-index: 400; transition: left 0.5s; height: 150px; }
+        /* Counter & Actors */
+        .counter { position: absolute; bottom: 25%; width: 170px; z-index: 500; }
+        .actor { position: absolute; height: 145px; z-index: 400; transition: left 1s linear, filter 0.3s; }
+        #player { bottom: 33%; left: 35%; transform: translateX(-50%); }
+        #auto-staff { bottom: 33%; right: 15%; transform: translateX(50%); display: none; }
         
-        .customer-ent { 
+        /* Customer Box */
+        .cust-container { 
             position: absolute; bottom: 8%; z-index: 600; 
             transition: left 1.5s linear; display: flex; flex-direction: column; align-items: center;
         }
-        .speech-bubble {
-            background: white; color: black; padding: 5px 12px; border-radius: 15px;
+        .bubble {
+            background: white; color: black; padding: 4px 10px; border-radius: 12px;
             font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2); position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid var(--accent);
         }
 
-        /* Controls */
-        #controls {
+        /* Floating Animations */
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+        .cash-float {
+            position: absolute; color: #2ecc71; font-weight: 900; 
+            font-size: 1.5rem; z-index: 2000; animation: floatUp 1s forwards;
+        }
+
+        /* Action Controls */
+        #footer {
             position: absolute; bottom: 0; width: 100%; height: 12vh;
-            display: flex; gap: 10px; padding: 15px; box-sizing: border-box;
-            background: var(--glass); backdrop-filter: blur(15px); z-index: 1001;
+            display: flex; gap: 15px; padding: 15px; box-sizing: border-box;
+            background: var(--glass); backdrop-filter: blur(20px); z-index: 1001;
         }
-        .btn-action {
-            flex: 1; border: none; border-radius: 12px; font-weight: bold;
-            text-transform: uppercase; color: white; cursor: pointer;
-            transition: transform 0.1s; display: flex; align-items: center; justify-content: center;
+        .btn {
+            flex: 1; border: none; border-radius: 15px; font-weight: 800;
+            color: white; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
         }
-        .btn-action:active { transform: scale(0.95); }
-        .btn-green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-        .btn-purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        .btn:active { transform: translateY(3px); box-shadow: none; }
+        .btn-refill { background: #27ae60; }
+        .btn-upgrade { background: #8e44ad; }
 
-        #cash-pop {
+        #collect-ui {
             position: absolute; top: 40%; left: 35%; transform: translate(-50%, -50%);
-            padding: 20px 40px; background: var(--gold); color: black;
-            border-radius: 50px; font-weight: 900; z-index: 2000;
-            display: none; border: 4px solid white; cursor: pointer;
+            padding: 15px 30px; background: var(--gold); color: black;
+            border-radius: 50px; font-weight: 900; z-index: 2000; display: none;
+            box-shadow: 0 0 20px rgba(255,204,0,0.5); border: 3px solid white; cursor: pointer;
         }
+        .garbage { position: absolute; bottom: 12%; font-size: 1.8rem; z-index: 550; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div class="stat-box"><div class="stat-label">Capital</div><div id="cash-val" class="stat-val">$250</div></div>
-    <div class="stat-box"><div class="stat-label">Store Level</div><div id="lvl-val" class="stat-val">1</div></div>
-    <div class="stat-box"><div class="stat-label">Inventory</div><div id="stk-val" class="stat-val">0/36</div></div>
-    <div class="stat-box"><div class="stat-label">Time</div><div id="time-val" class="stat-val">08:00 AM</div></div>
+    <div class="stat-box"><div class="stat-label">CASH</div><div id="c-val" class="stat-val">$300</div></div>
+    <div class="stat-box"><div class="stat-label">LEVEL</div><div id="l-val" class="stat-val">1</div></div>
+    <div class="stat-box"><div class="stat-label">STOCK</div><div id="s-val" class="stat-val">0/36</div></div>
+    <div class="stat-box"><div class="stat-label">TIME</div><div id="t-val" class="stat-val">09:00 AM</div></div>
 </div>
 
-<div id="game-canvas">
-    <div id="shelf1" class="shelf-unit" style="top: 15%; left: 5%;"><div class="item-grid" id="ig1"></div></div>
-    <div id="shelf2" class="shelf-unit" style="top: 15%; right: 5%;"><div class="item-grid" id="ig2"></div></div>
-    <div id="shelf3" class="shelf-unit" style="top: 38%; left: 5%;"><div class="item-grid" id="ig3"></div></div>
-    <div id="shelf4" class="shelf-unit" style="top: 38%; right: 5%;"><div class="item-grid" id="ig4"></div></div>
+<div id="stage">
+    <div id="s1" class="shelf" style="top:15%; left:5%;"><div class="item-grid" id="ig1"></div></div>
+    <div id="s2" class="shelf" style="top:15%; right:5%;"><div class="item-grid" id="ig2"></div></div>
+    <div id="s3" class="shelf" style="top:38%; left:5%;"><div class="item-grid" id="ig3"></div></div>
+    <div id="s4" class="shelf" style="top:38%; right:5%;"><div class="item-grid" id="ig4"></div></div>
 
-    <img src="player.png" id="player" style="left: 35%;">
-    <img src="police_idle.png" id="bot" class="actor" style="position:absolute; bottom:33%; right:15%; display:none; height:150px; z-index:400;">
+    <img src="player.png" id="player" class="actor">
+    <img src="player.png" id="auto-staff" class="actor" style="filter: sepia(1) hue-rotate(150deg);"> <img src="counter.png" id="c-main" class="counter" style="left:35%;">
+    <img src="counter.png" id="c-auto" class="counter" style="right:15%; display:none;">
 
-    <img src="counter.png" id="c1" class="counter-desk" style="left: 35%;">
-    <img src="counter.png" id="c2" class="counter-desk" style="right: 15%; display:none; filter: grayscale(1) brightness(1.5);">
-
-    <div id="customer-container"></div>
-    <div id="garbage-container"></div>
+    <div id="cust-layer"></div>
+    <div id="garbage-layer"></div>
     
-    <div id="cash-pop" onclick="collectPayment()">COLLECT CASH</div>
+    <div id="collect-ui" onclick="processManual()">COLLECT $</div>
 </div>
 
-<div id="controls">
-    <button class="btn-action btn-green" onclick="orderStock()">Order Stock ($50)</button>
-    <button id="hire-btn" class="btn-action btn-purple" onclick="hireStaff()">Hire Cleaner ($150)</button>
+<div id="footer">
+    <button class="btn btn-refill" onclick="doRefill()">Refill Stock ($50)</button>
+    <button id="hire-btn" class="btn btn-upgrade" onclick="hireCleaner()">Hire Cleaner ($150)</button>
 </div>
 
 <script>
-    // Game State
-    let cash = 250, stock = 0, level = 1, xp = 0;
-    let hour = 8, minute = 0;
-    let maxStock = 36, shelfCap = 9;
-    let hasCleaner = false, hasAutoBot = false;
-    let activeCustomer = null;
+    let cash = 300, stock = 0, lvl = 1, xp = 0;
+    let hour = 9, hasCleaner = false, hasStaff = false;
+    let currentCust = null;
+    const items = ["🍎", "🥛", "🍞", "🍕", "🍪"];
 
-    const items = ["🍎", "🥛", "🍞", "🍕", "🍪", "🍩"];
-    const quotes = ["Quick service!", "Love this place", "Need more variety", "Clean floor!", "Best shop in town"];
-
-    function updateHUD() {
-        document.getElementById('cash-val').innerText = `$${cash}`;
-        document.getElementById('lvl-val').innerText = level;
-        document.getElementById('stk-val').innerText = `${stock}/${maxStock}`;
+    function update() {
+        document.getElementById('c-val').innerText = `$${cash}`;
+        document.getElementById('l-val').innerText = lvl;
+        document.getElementById('s-val').innerText = `${stock}/${(lvl>1?72:36)}`;
+        document.getElementById('t-val').innerText = `${hour}:00 ${hour>=12?'PM':'AM'}`;
         
-        // Day/Night Logic
-        let ampm = hour >= 12 ? 'PM' : 'AM';
-        let displayHour = hour % 12 || 12;
-        document.getElementById('time-val').innerText = `${displayHour}:${minute === 0 ? '00' : '30'} ${ampm}`;
-        
-        if(hour >= 18 || hour <= 6) document.body.classList.add('night-mode');
-        else document.body.classList.remove('night-mode');
+        if(hour >= 18 || hour <= 6) document.body.classList.add('night');
+        else document.body.classList.remove('night');
 
-        // Shelf Rendering
-        for(let s=1; s<=4; s++) {
-            const grid = document.getElementById(`ig${s}`);
-            grid.innerHTML = "";
-            let start = (s-1)*shelfCap, end = Math.min(stock, s*shelfCap);
-            for(let i=start; i<end; i++) grid.innerHTML += `<span>${items[i%items.length]}</span>`;
+        for(let i=1; i<=4; i++) {
+            const g = document.getElementById(`ig${i}`); g.innerHTML = "";
+            let cap = 9; let start = (i-1)*cap; let end = Math.min(stock, i*cap);
+            for(let j=start; j<end; j++) g.innerHTML += `<span>${items[j%5]}</span>`;
         }
     }
 
-    // Professional Stock Ordering
-    function orderStock() {
-        if(cash >= 50 && stock < maxStock) {
-            cash -= 50; stock = Math.min(stock + 12, maxStock);
-            updateHUD();
+    function doRefill() {
+        if(cash >= 50 && stock < (lvl>1?72:36)) {
+            cash -= 50; stock += 15; update();
+            showFloat(35, 30, "📦 Stocked");
         }
     }
 
-    function spawnCustomer() {
-        if(document.querySelectorAll('.customer-ent').length > 3 || stock <= 0) return;
-
-        const container = document.getElementById('customer-container');
-        const cust = document.createElement('div');
-        cust.className = "customer-ent";
-        cust.style.left = "-150px";
-
+    function spawn() {
+        if(document.querySelectorAll('.cust-container').length >= (lvl+1) || stock <= 0) return;
+        const layer = document.getElementById('cust-layer');
+        const box = document.createElement('div');
+        box.className = "cust-container"; box.style.left = "-150px";
         const type = ["man", "old_lady", "police"][Math.floor(Math.random()*3)];
-        cust.innerHTML = `
-            <div class="speech" style="visibility:hidden">Hello!</div>
-            <div class="mood">😊</div>
-            <img src="${type}_walk.png" style="height:140px;">
-        `;
-        container.appendChild(cust);
+        box.innerHTML = `<div class="bubble">...</div><img src="${type}_walk.png" style="height:140px;">`;
+        layer.appendChild(box);
 
-        const isAuto = (hasAutoBot && Math.random() > 0.5);
-        const targetX = isAuto ? "78%" : "35%";
+        const isAuto = (hasStaff && Math.random() > 0.5);
+        const tx = isAuto ? "80%" : "35%";
 
         setTimeout(() => {
-            cust.style.left = targetX;
+            box.style.left = tx;
             setTimeout(() => {
-                cust.querySelector('img').src = `${type}_idle.png`;
+                box.querySelector('img').src = `${type}_idle.png`;
                 if(isAuto) {
-                    setTimeout(() => finishAuto(cust, type), 2000);
+                    setTimeout(() => { 
+                        cash += 50; stock--; xp += 15; update(); 
+                        showFloat(80, 50, "+$50");
+                        leave(box, type); 
+                    }, 2000);
                 } else {
-                    activeCustomer = { el: cust, type: type };
-                    document.getElementById('cash-pop').style.display = 'block';
+                    currentCust = {el: box, type: type, x: tx};
+                    document.getElementById('collect-ui').style.display = "block";
+                    box.querySelector('.bubble').innerText = "Billing?";
                 }
-            }, 1500);
+            }, 1000);
         }, 100);
     }
 
-    function collectPayment() {
-        if(!activeCustomer) return;
-        let bonus = (activeCustomer.type === "police") ? 100 : 60;
-        cash += bonus; stock--; xp += 25;
-        document.getElementById('cash-pop').style.display = 'none';
-        
-        let sp = activeCustomer.el.querySelector('.speech');
-        sp.style.visibility = 'visible';
-        sp.innerText = quotes[Math.floor(Math.random()*quotes.length)];
-        
-        if(Math.random() > 0.4) createMess(activeCustomer.el.style.left);
-        
-        let target = activeCustomer.el;
-        let tType = activeCustomer.type;
-        activeCustomer = null;
-        
-        setTimeout(() => leave(target, tType), 1000);
-        checkLevel(); updateHUD();
+    function processManual() {
+        if(!currentCust) return;
+        let p = (currentCust.type === "police") ? 120 : 60;
+        cash += p; stock--; xp += 20;
+        showFloat(35, 50, `+$${p}`);
+        document.getElementById('collect-ui').style.display = "none";
+        currentCust.el.querySelector('.bubble').innerText = "Thanks!";
+        if(Math.random() > 0.4) spawnGarbage(currentCust.x);
+        let target = currentCust.el; let tType = currentCust.type;
+        currentCust = null;
+        setTimeout(() => leave(target, tType), 800);
+        checkLvl(); update();
     }
 
-    function finishAuto(cust, type) {
-        cash += 50; stock--; xp += 15;
-        cust.querySelector('.mood').innerText = "🤖";
-        updateHUD(); leave(cust, type);
-    }
-
-    function createMess(x) {
+    function spawnGarbage(x) {
         const g = document.createElement('div');
-        g.className = "garbage"; g.innerHTML = "🗑️";
-        g.style.left = x;
-        document.getElementById('garbage-container').appendChild(g);
-        
+        g.className = "garbage"; g.innerHTML = "🗑️"; g.style.left = x;
+        document.getElementById('garbage-layer').appendChild(g);
         if(hasCleaner) {
-            const cl = document.getElementById('cleaner');
+            const cl = document.getElementById('cleaner-bot');
             cl.style.left = x;
-            setTimeout(() => { g.remove(); cash += 10; cl.style.left = "90%"; updateHUD(); }, 1500);
+            setTimeout(() => { g.remove(); cash += 10; cl.style.left = "90%"; update(); }, 1500);
         } else {
-            g.onclick = () => { g.remove(); cash += 5; updateHUD(); };
+            g.onclick = () => { g.remove(); cash += 5; update(); };
         }
+    }
+
+    function showFloat(x, y, txt) {
+        const f = document.createElement('div');
+        f.className = "cash-float"; f.style.left = x + "%"; f.style.top = y + "%";
+        f.innerText = txt; document.body.appendChild(f);
+        setTimeout(() => f.remove(), 1000);
     }
 
     function leave(el, type) {
         el.querySelector('img').src = `${type}_walk.png`;
         el.style.left = "110%";
-        setTimeout(() => el.remove(), 2000);
+        setTimeout(() => el.remove(), 1500);
     }
 
-    function checkLevel() {
+    function checkLvl() {
         if(xp >= 100) {
-            xp = 0; level++;
-            if(level === 2) {
-                hasAutoBot = true;
-                document.getElementById('c2').style.display = 'block';
-                document.getElementById('bot').style.display = 'block';
-                alert("Level 2! Auto-Counter Online.");
+            xp = 0; lvl++;
+            if(lvl === 2) {
+                hasStaff = true;
+                document.getElementById('c-auto').style.display = "block";
+                document.getElementById('auto-staff').style.display = "block";
+                alert("Level 2! Hired a New Staff Member!");
             }
+            update();
         }
     }
 
-    function hireStaff() {
+    function hireCleaner() {
         if(cash >= 150) {
             cash -= 150; hasCleaner = true;
             const cl = document.createElement('img');
-            cl.id = "cleaner"; cl.src = "cleaner_idle.png";
-            cl.className = "actor"; cl.style.cssText = "position:absolute; bottom:9%; right:5%; height:140px; z-index:550; transition: left 1s;";
-            document.getElementById('game-canvas').appendChild(cl);
-            document.getElementById('hire-btn').style.display = 'none';
-            updateHUD();
+            cl.id = "cleaner-bot"; cl.src = "cleaner_idle.png";
+            cl.className = "actor"; cl.style.cssText = "bottom:9%; right:5%; height:140px; z-index:550;";
+            document.getElementById('stage').appendChild(cl);
+            document.getElementById('hire-btn').style.display = "none";
+            update();
         }
     }
 
-    // Time Cycle
-    setInterval(() => {
-        minute += 30;
-        if(minute >= 60) { minute = 0; hour++; }
-        if(hour >= 24) hour = 0;
-        updateHUD();
-    }, 5000);
-
-    setInterval(spawnCustomer, 4000);
-    updateHUD();
+    setInterval(() => { hour++; if(hour>23) hour=0; update(); }, 10000);
+    setInterval(spawn, 4000);
+    update();
 </script>
 </body>
 </html>
