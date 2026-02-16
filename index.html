@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mega Shop Simulator - Grandma Update</title>
+    <title>Mega Shop Simulator - Multi-Customer Edition</title>
     <style>
         body { margin: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; font-family: 'Courier New', monospace; }
         
@@ -11,16 +11,17 @@
             position: relative; border: 6px solid #5d4037; overflow: hidden;
         }
 
-        /* Layering System */
+        /* Floor & Shelves */
         .floor { position: absolute; bottom: 0; width: 100%; height: 35%; background: #5d4037; z-index: 1; }
         .shelf-container { position: absolute; top: 10%; width: 100%; display: flex; justify-content: space-around; z-index: 2; }
         .rack { width: 180px; height: 140px; background: #4e342e; border: 4px solid #3e2723; display: grid; grid-template-rows: 1fr 1fr; padding: 5px; }
-        .shelf-row { border-bottom: 2px solid #3e2723; display: flex; justify-content: space-around; align-items: center; font-size: 28px; }
+        .shelf-row { border-bottom: 2px solid #3e2723; display: flex; justify-content: space-around; align-items: center; font-size: 28px; min-height: 45px; }
 
-        /* Character Assets */
+        /* Character Assets Layering */
         #player-sprite { position: absolute; bottom: 32%; width: 200px; left: 50%; transform: translateX(-50%); z-index: 5; }
         .counter { position: absolute; bottom: 25%; width: 450px; height: 110px; background: #8b4513; border: 4px solid #5d4037; z-index: 10; left: 50%; transform: translateX(-50%); }
-        .trash { position: absolute; font-size: 25px; cursor: pointer; z-index: 15; animation: leaf-drop 1s ease-out; }
+        .trash { position: absolute; font-size: 25px; z-index: 15; pointer-events: none; }
+        
         #cleaner-obj { position: absolute; bottom: 10%; width: 140px; z-index: 25; transition: left 1s linear; display: none; }
         #customer-sprite { position: absolute; bottom: 12%; left: -250px; width: 180px; z-index: 30; transition: left 1.5s linear; }
 
@@ -28,59 +29,84 @@
         #ui-panel { width: 100%; height: 150px; background: #e1b382; border-top: 6px solid #5d4037; display: flex; justify-content: center; align-items: center; gap: 20px; }
         .stat-box { background: #3e2723; color: #f1c40f; padding: 12px 20px; border-radius: 8px; font-weight: bold; border: 2px solid #f1c40f; }
         .btn { padding: 15px 25px; font-weight: bold; cursor: pointer; border: none; border-radius: 8px; color: white; transition: 0.2s; }
-        .btn:active { transform: scale(0.95); }
-
-        @keyframes leaf-drop { from { bottom: 50%; opacity: 0; } to { bottom: 5%; opacity: 1; } }
+        
+        #bill-btn { position:absolute; bottom:45%; left:50%; transform:translateX(-50%); background:#f39c12; display:none; z-index:100; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div class="shelf-container" id="shelves">
+    <div class="shelf-container">
         <div class="rack"><div class="shelf-row" id="s1"></div><div class="shelf-row" id="s2"></div></div>
         <div class="rack"><div class="shelf-row" id="s3"></div><div class="shelf-row" id="s4"></div></div>
     </div>
 
     <div class="floor"></div>
     <img src="player.png" id="player-sprite"> <div class="counter"></div>
-    <img src="cleaner_idle.png" id="cleaner-obj"> <img src="ladycustomar.png" id="customer-sprite"> <button id="bill-btn" class="btn" style="position:absolute; bottom:45%; left:50%; transform:translateX(-50%); background:#f39c12; display:none; z-index:100;" onclick="processBill()">COLLECT CASH 💰</button>
+    <img src="cleaner_idle.png" id="cleaner-obj"> <img src="lady_idle.png" id="customer-sprite"> <button id="bill-btn" class="btn" onclick="processBill()">COLLECT CASH 💰</button>
 </div>
 
 <div id="ui-panel">
-    <div class="stat-box">CASH: $<span id="cash">200</span></div>
-    <div class="stat-box">STOCK: <span id="stock-count">0</span></div>
-    <button class="btn" style="background: #27ae60;" onclick="restock()">RESTOCK ITEMS ($30)</button>
+    <div class="stat-box">💰 $<span id="cash">200</span></div>
+    <div class="stat-box">📦 STOCK: <span id="stock-count">0</span></div>
+    <button class="btn" style="background: #27ae60;" onclick="restock()">BUY STOCK ($30)</button>
     <button id="hire-btn" class="btn" style="background: #2980b9;" onclick="hireCleaner()">HIRE CLEANER ($150)</button>
 </div>
 
 <script>
-    let cash = 200, stock = 0, dirt = 0, isWaiting = false, hasCleaner = false;
-    const products = ["🍎", "🍞", "🥛", "🧀", "🥚"];
+    let cash = 200, stock = 0, isWaiting = false, hasCleaner = false;
+    let currentCustomerType = "";
+    
+    // Proper Product Library
+    const productIcons = ["🍎", "🍞", "🥛", "🧀", "🥚", "🍪"];
 
-    // Restock Logic
     function restock() {
         if (cash >= 30) {
             cash -= 30; stock += 4;
-            updateDisplay(); updateShelves();
+            updateUI(); updateShelves();
         }
     }
 
     function updateShelves() {
         const rows = ["s1", "s2", "s3", "s4"];
-        rows.forEach((id, index) => {
-            document.getElementById(id).innerText = (index < stock) ? products[index % products.length] : "";
+        rows.forEach((id, i) => {
+            document.getElementById(id).innerText = (i < stock) ? productIcons[i % productIcons.length] : "";
         });
     }
 
-    // Cleaner AI
+    // Multi-Customer Logic
+    function spawnCustomer() {
+        if (isWaiting) return;
+        isWaiting = true;
+        
+        const cust = document.getElementById('customer-sprite');
+        // Randomly pick between Old Lady and Young Lady
+        const isGrandma = Math.random() > 0.5;
+        currentCustomerType = isGrandma ? "old_lady" : "lady";
+        
+        cust.src = `${currentCustomerType}_walk.png`; 
+        cust.style.left = "40%";
+
+        setTimeout(() => {
+            cust.src = `${currentCustomerType}_idle.png`; 
+            if (stock > 0) {
+                document.getElementById('bill-btn').style.display = "block";
+                createLeaf();
+            } else {
+                setTimeout(customerLeave, 2000);
+            }
+        }, 1500);
+    }
+
+    // Cleaner Logic
     function hireCleaner() {
         if (cash >= 150 && !hasCleaner) {
             cash -= 150; hasCleaner = true;
             const cln = document.getElementById('cleaner-obj');
             cln.style.display = 'block';
             cln.style.left = "10%";
-            document.getElementById('hire-btn').innerText = "CLEANER ON DUTY";
-            updateDisplay();
+            document.getElementById('hire-btn').innerText = "CLEANER ACTIVE";
+            updateUI();
 
             setInterval(() => {
                 let leaves = document.querySelectorAll('.trash');
@@ -97,31 +123,8 @@
                         cln.src = "cleaner_idle.png";
                     }, 1000);
                 }
-            }, 3000);
+            }, 3500);
         }
-    }
-
-    // Customer System with Grandma Update
-    function spawnCustomer() {
-        if (isWaiting) return;
-        isWaiting = true;
-        
-        const cust = document.getElementById('customer-sprite');
-        const isGrandma = Math.random() > 0.5;
-        
-        // Use proper files from structure
-        cust.src = isGrandma ? "old_lady_walk.png" : "ladycustomar.png";
-        cust.style.left = "40%";
-
-        setTimeout(() => {
-            if (isGrandma) cust.src = "old_lady_idle.png"; // Grandma stands still
-            if (stock > 0) {
-                document.getElementById('bill-btn').style.display = "block";
-                createLeaf();
-            } else {
-                setTimeout(customerLeave, 2000);
-            }
-        }, 1500);
     }
 
     function createLeaf() {
@@ -134,24 +137,24 @@
     }
 
     function processBill() {
-        let earnings = (document.getElementById('customer-sprite').src.includes("old_lady")) ? 80 : 50; 
-        cash += earnings; stock--;
+        let pay = (currentCustomerType === "old_lady") ? 80 : 50; 
+        cash += pay; stock--;
         document.getElementById('bill-btn').style.display = "none";
-        updateDisplay(); updateShelves();
+        updateUI(); updateShelves();
         customerLeave();
     }
 
     function customerLeave() {
         const cust = document.getElementById('customer-sprite');
+        cust.src = `${currentCustomerType}_walk.png`;
         cust.style.left = "110%";
         setTimeout(() => {
-            cust.style.transition = "none";
-            cust.style.left = "-250px";
+            cust.style.transition = "none"; cust.style.left = "-250px";
             setTimeout(() => { cust.style.transition = "left 1.5s linear"; isWaiting = false; }, 100);
         }, 1500);
     }
 
-    function updateDisplay() {
+    function updateUI() {
         document.getElementById('cash').innerText = cash;
         document.getElementById('stock-count').innerText = stock;
     }
