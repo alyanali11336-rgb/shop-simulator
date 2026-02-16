@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Sim - Grounded Edition</title>
+    <title>Shop Sim - WASD Manual Control</title>
     <style>
         body { 
             background: #f3c592; margin: 0; display: flex; flex-direction: column;
@@ -19,66 +19,43 @@
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* --- FIXED GROUNDED PHYSICS --- */
-        
-        /* Shelves: Wall se hata kar niche floor par fix kiya */
-        .shelf { width: 170px; bottom: 275px; z-index: 1; }
-        #s1 { left: 70px; } 
-        #s2 { left: 560px; } 
+        /* GROUNDED PHYSICS */
+        .shelf { width: 150px; bottom: 275px; z-index: 1; border: 2px solid transparent; }
+        .highlight { border-color: #0f0; background: rgba(0,255,0,0.1); }
+        #s1 { left: 80px; } #s2 { left: 570px; } 
 
-        /* Player: Perfectly behind the counter floor */
-        #player { width: 185px; bottom: 285px; left: 305px; z-index: 5; }
+        /* Player moves via JS */
+        #player { width: 170px; bottom: 285px; left: 315px; z-index: 5; transition: left 0.1s linear; }
+        #counter { width: 300px; bottom: 180px; left: 250px; z-index: 10; }
 
-        /* Counter: Small and solid on tiles */
-        #counter { width: 310px; bottom: 175px; left: 245px; z-index: 10; }
+        #customer { width: 240px; bottom: 20px; left: -350px; z-index: 20; transition: left 1.2s linear; }
 
-        /* Customers: Walking on front tiles */
-        #customer { 
-            bottom: 20px; left: -350px; 
-            z-index: 20; transition: all 1.5s linear; 
-        }
-
-        /* Speech Bubble */
         #speech {
-            position: absolute; background: white; padding: 8px 12px;
-            border-radius: 12px; border: 3px solid #000; font-weight: bold;
-            display: none; z-index: 30; font-size: 16px; box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+            position: absolute; background: white; padding: 8px; border-radius: 10px;
+            border: 2px solid #000; font-weight: bold; display: none; z-index: 30;
         }
 
-        /* --- NEW UI PANEL (Skin Area) --- */
+        #inventory-ui {
+            position: absolute; top: 10px; left: 10px; color: white;
+            background: rgba(0,0,0,0.7); padding: 5px 10px; border-radius: 5px;
+        }
+
+        /* UI PANEL */
         #ui-panel {
-            width: 800px; padding: 25px; display: flex;
-            justify-content: space-between; align-items: center;
-            background: #e1b382; border: 5px solid #5d4037;
+            width: 800px; padding: 20px; display: flex; justify-content: space-between;
+            align-items: center; background: #e1b382; border: 5px solid #5d4037;
             border-radius: 0 0 20px 20px; margin-top: -5px;
         }
 
-        .stat-group { display: flex; gap: 15px; }
-        .stat-card { 
-            background: #5d4037; color: #fff; padding: 12px 20px; 
-            border-radius: 10px; font-weight: bold; font-size: 18px;
-            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.3);
-        }
-
-        .goal-text { font-weight: bold; color: #5d4037; font-size: 20px; }
-
-        .btn-group { display: flex; gap: 12px; }
-        button { 
-            padding: 15px 30px; cursor: pointer; border: none; 
-            font-weight: bold; border-radius: 10px; color: white;
-            text-transform: uppercase; transition: 0.2s;
-            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
-        }
+        .stat-card { background: #5d4037; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: bold; }
+        button { padding: 12px 20px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; }
         .btn-refill { background: #d35400; }
-        .btn-upgrade { background: #27ae60; }
-        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
-        button:active { transform: translateY(2px); box-shadow: none; }
-        button:disabled { background: #7f8c8d; cursor: not-allowed; transform: none; }
     </style>
 </head>
 <body>
 
 <div id="game-window">
+    <div id="inventory-ui">HAND: <span id="held-item">EMPTY</span></div>
     <div id="speech"></div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
@@ -89,103 +66,99 @@
 </div>
 
 <div id="ui-panel">
-    <div class="stat-group">
+    <div style="display:flex; gap:10px;">
         <div class="stat-card">💰 $<span id="bal">0</span></div>
-        <div class="stat-card">📦 STOCK: <span id="stock">5</span>/5</div>
+        <div class="stat-card">📦 <span id="stock">5</span>/5</div>
     </div>
-
-    <div class="goal-text">🎯 GOAL: $<span id="goal">100</span></div>
-
-    <div class="btn-group">
-        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">Refill ($50)</button>
-        <button class="btn-upgrade" onclick="levelUp()">Upgrade ($200)</button>
-    </div>
+    <div style="font-weight:bold; color:#5d4037;">Use A/D to MOVE | E to PICK/DROP</div>
+    <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">Refill ($50)</button>
 </div>
 
 <script>
-    let cash = 0;
-    let stock = 5;
-    let level = 1;
-    let dailyGoal = 100;
-    let isServing = false;
-    const items = ["MILK", "BREAD", "SODA", "EGGS", "FRUIT"];
+    let cash = 0, stock = 5, playerPos = 315;
+    let heldItem = null, isCustomerWaiting = false;
+    let customerOrder = null;
 
-    // AUTOMATION: Every 5 seconds
+    // Movement Controls
+    window.addEventListener('keydown', (e) => {
+        const p = document.getElementById('player');
+        if (e.key.toLowerCase() === 'a' && playerPos > 50) playerPos -= 15;
+        if (e.key.toLowerCase() === 'd' && playerPos < 600) playerPos += 15;
+        p.style.left = playerPos + 'px';
+
+        if (e.key.toLowerCase() === 'e') interact();
+    });
+
+    function interact() {
+        // Shelf Check (Pick item)
+        if (!heldItem && stock > 0) {
+            if (Math.abs(playerPos - 80) < 60 || Math.abs(playerPos - 570) < 60) {
+                heldItem = "ITEM";
+                document.getElementById('held-item').innerText = "📦 CARRYING ITEM";
+            }
+        } 
+        // Counter Check (Drop to customer)
+        else if (heldItem && isCustomerWaiting && Math.abs(playerPos - 315) < 50) {
+            completeSale();
+        }
+    }
+
     setInterval(() => {
-        if (!isServing && stock > 0) serveCustomer();
+        if (!isCustomerWaiting && stock > 0) spawnCustomer();
     }, 5000);
 
-    function serveCustomer() {
-        isServing = true;
+    function spawnCustomer() {
+        isCustomerWaiting = true;
         const cust = document.getElementById('customer');
         const speech = document.getElementById('speech');
-
-        // Randomly pick customer and set size
+        
         const isLady = Math.random() > 0.5;
         cust.src = isLady ? "lady_customer.png" : "customer.png";
-        cust.style.width = isLady ? "260px" : "220px"; // Lady thodi badi hai
-        
+        cust.style.width = isLady ? "260px" : "220px";
         cust.style.left = "290px"; 
 
         setTimeout(() => {
-            speech.innerText = "I WANT: " + items[Math.floor(Math.random() * items.length)];
+            speech.innerText = "GIVE ME ITEM! (Press E at Counter)";
             speech.style.display = "block";
             speech.style.left = "330px";
             speech.style.bottom = "240px";
+        }, 1200);
+    }
 
+    function completeSale() {
+        cash += 30;
+        stock--;
+        heldItem = null;
+        isCustomerWaiting = false;
+        document.getElementById('bal').innerText = cash;
+        document.getElementById('stock').innerText = stock;
+        document.getElementById('held-item').innerText = "EMPTY";
+        document.getElementById('speech').innerText = "THANKS!";
+        
+        setTimeout(() => {
+            document.getElementById('speech').style.display = "none";
+            document.getElementById('customer').style.left = "900px";
+            if (stock <= 0) {
+                document.getElementById('s1').src = 'shelf_empty.png';
+                document.getElementById('s2').src = 'shelf_empty.png';
+                document.getElementById('refillBtn').style.display = "block";
+            }
             setTimeout(() => {
-                let profit = 20 + (level * 10);
-                cash += profit;
-                stock--;
-                
-                document.getElementById('bal').innerText = cash;
-                document.getElementById('stock').innerText = stock;
-                speech.style.display = "none";
-
-                // Check Goal
-                if (cash >= dailyGoal) {
-                    dailyGoal += 150;
-                    document.getElementById('goal').innerText = dailyGoal;
-                    alert("Daily Goal Complete! Target increased.");
-                }
-
-                if (stock <= 0) {
-                    document.getElementById('s1').src = 'shelf_empty.png';
-                    document.getElementById('s2').src = 'shelf_empty.png';
-                    document.getElementById('refillBtn').style.display = "block";
-                }
-
-                cust.style.left = "900px"; 
-                setTimeout(() => {
-                    cust.style.transition = "none";
-                    cust.style.left = "-350px";
-                    setTimeout(() => { 
-                        cust.style.transition = "all 1.5s linear"; 
-                        isServing = false;
-                    }, 50);
-                }, 1500);
-            }, 1500);
-        }, 1500);
+                document.getElementById('customer').style.transition = "none";
+                document.getElementById('customer').style.left = "-350px";
+                setTimeout(() => document.getElementById('customer').style.transition = "all 1.2s linear", 50);
+            }, 1200);
+        }, 800);
     }
 
     function refill() {
         if (cash >= 50) {
-            cash -= 50;
-            stock = 5;
+            cash -= 50; stock = 5;
             document.getElementById('bal').innerText = cash;
             document.getElementById('stock').innerText = stock;
             document.getElementById('s1').src = 'shelf_full.png';
             document.getElementById('s2').src = 'shelf_full.png';
             document.getElementById('refillBtn').style.display = "none";
-        }
-    }
-
-    function levelUp() {
-        if (cash >= 200) {
-            cash -= 200;
-            level++;
-            document.getElementById('bal').innerText = cash;
-            alert("Shop Upgraded! Profits are now higher.");
         }
     }
 </script>
