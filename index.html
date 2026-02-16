@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Perfect Gravity</title>
+    <title>Shop Simulator - Pro Movement</title>
     <style>
         body {
             margin: 0; overflow: hidden; display: flex;
@@ -11,25 +11,22 @@
         }
 
         #game-container {
-            width: 100vw; height: 100vh; background: #2c3e50;
+            width: 85vw; height: 70vh; background: #2c3e50;
             position: relative; display: flex; flex-direction: column;
             justify-content: flex-end; align-items: center;
+            transition: all 0.5s ease; border: 5px solid #5d4037;
         }
 
-        /* Shelves */
         .shelf-container {
             position: absolute; top: 10%; width: 90%;
             display: flex; justify-content: space-around; z-index: 2;
         }
         .rack {
-            width: 350px; height: 200px; background: #5d4037;
-            border: 6px solid #4a332a; display: grid;
-            grid-template-rows: repeat(2, 1fr); gap: 10px; padding: 10px;
+            width: 150px; height: 120px; background: #5d4037;
+            border: 4px solid #4a332a; display: grid;
+            grid-template-rows: repeat(2, 1fr); gap: 5px; padding: 5px;
         }
-        .shelf-row {
-            border-bottom: 4px solid #4a332a; display: flex;
-            justify-content: space-around; align-items: center; font-size: 40px;
-        }
+        .shelf-row { border-bottom: 2px solid #4a332a; display: flex; justify-content: space-around; align-items: center; font-size: 25px; }
 
         .floor {
             position: absolute; bottom: 0; width: 100%; height: 35%;
@@ -37,156 +34,158 @@
         }
 
         .counter {
-            position: absolute; bottom: 28%; width: 500px; height: 150px;
-            background: #8b4513; border: 6px solid #5d4037; z-index: 10;
+            position: absolute; bottom: 28%; width: 500px; height: 130px;
+            background: #8b4513; border: 5px solid #5d4037; z-index: 10;
         }
 
+        /* PLAYER: Movements enabled */
         #player-sprite {
-            position: absolute; bottom: 40%; width: 240px; 
+            position: absolute; bottom: 38%; width: 180px; 
+            left: 50%; transform: translateX(-50%);
             z-index: 5; image-rendering: pixelated;
         }
 
-        /* GRAVITY FIX: Character now walks ON the floor */
         #customer-sprite {
-            position: absolute; 
-            bottom: 22%; /* Fixed from 12% to 22% */
-            left: -300px; 
-            width: 220px; z-index: 20; transition: left 1.5s linear;
+            position: absolute; bottom: 22%; left: -300px; 
+            width: 160px; z-index: 20; transition: left 1.5s linear;
             image-rendering: pixelated;
         }
 
-        /* UI Panel */
+        /* UI & Library */
+        #library-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #e1b382; border: 5px solid #5d4037; padding: 20px;
+            z-index: 300; display: none; text-align: center; max-width: 400px;
+        }
+        .library-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .lib-item { background: #5d4037; padding: 10px; cursor: pointer; border: 2px solid #f3c592; color: white; border-radius: 5px; }
+
         #ui-panel {
-            position: absolute; bottom: 0; width: 100%; height: 160px;
-            background: #e1b382; border-top: 8px solid #5d4037;
-            display: flex; justify-content: center; align-items: center;
-            gap: 15px; z-index: 100;
+            width: 100%; height: 140px; background: #e1b382;
+            border-top: 5px solid #5d4037; display: flex;
+            justify-content: center; align-items: center; gap: 15px;
         }
-
-        .stat-box {
-            background: #5d4037; color: #f1c40f; padding: 10px;
-            border-radius: 10px; font-size: 18px; font-weight: bold;
-            border: 3px solid #f3c592; min-width: 120px; text-align: center;
-        }
-
-        .game-btn {
-            padding: 12px 20px; font-size: 16px; font-weight: bold;
-            cursor: pointer; border: none; border-radius: 12px;
-            color: white; text-transform: uppercase; box-shadow: 0 4px #a04500;
-        }
-
-        #bill-btn { 
-            position: absolute; bottom: 45%; left: 50%; 
-            transform: translateX(-50%); background: #f1c40f; 
-            color: black; display: none; z-index: 150;
-            box-shadow: 0 6px #c2a10e; padding: 15px 30px;
-        }
+        .stat-box { background: #5d4037; color: #f1c40f; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        .game-btn { padding: 12px 20px; font-weight: bold; cursor: pointer; border: none; border-radius: 10px; color: white; }
 
         #demand-bubble {
-            position: absolute; bottom: 65%; left: 40%;
-            background: white; color: black; padding: 10px;
-            border-radius: 10px; border: 3px solid black;
-            display: none; font-weight: bold; z-index: 200;
+            position: absolute; bottom: 60%; left: 40%;
+            background: white; padding: 10px; border-radius: 10px;
+            display: none; font-weight: bold; z-index: 200; border: 2px solid black;
         }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="demand-bubble">I want: 🍎</div>
-    
-    <div class="shelf-container">
-        <div class="rack">
-            <div class="shelf-row"><span id="s1"></span><span id="s2"></span></div>
-            <div class="shelf-row"><span id="s3"></span><span id="s4"></span></div>
-        </div>
-        <div class="rack">
-            <div class="shelf-row"><span id="s5"></span><span id="s6"></span></div>
-            <div class="shelf-row"><span id="s7"></span><span id="s8"></span></div>
-        </div>
+    <div id="demand-bubble"></div>
+    <div class="shelf-container" id="shelves">
+        <div class="rack"><div class="shelf-row"><span class="slot"></span><span class="slot"></span></div><div class="shelf-row"><span class="slot"></span><span class="slot"></span></div></div>
     </div>
-
+    
     <div class="floor"></div>
     <img src="player.png" id="player-sprite">
     <div class="counter"></div>
     <img src="ladycustomar.png" id="customer-sprite">
     
-    <button id="bill-btn" class="game-btn">SELL ITEM 🧾</button>
+    <button id="bill-btn" class="game-btn" style="position:absolute; bottom:48%; left:50%; transform:translateX(-50%); background:#f1c40f; color:black; display:none; z-index:150;" onclick="processBill()">SELL 🧾</button>
+</div>
 
-    <div id="ui-panel">
-        <div class="stat-box">CASH: $<span id="cash">100</span></div>
-        <div class="stat-box">STOCK: <span id="stock">0</span>/<span id="max-stock">8</span></div>
-        <button class="game-btn" style="background: #27ae60;" onclick="buyItem('🍎', 20)">APPLE ($20)</button>
-        <button class="game-btn" style="background: #3498db;" onclick="buyItem('🥤', 30)">SODA ($30)</button>
-        <button class="game-btn" style="background: #9b59b6;" onclick="buyItem('🧸', 50)">TOY ($50)</button>
-        <button id="upgrade-btn" class="game-btn" style="background: #f39c12;" onclick="upgradeShop()">UPGRADE ($200)</button>
-    </div>
+<div id="library-modal">
+    <h3>🛒 ITEM LIBRARY</h3>
+    <div class="library-grid" id="library-grid"></div>
+    <button class="game-btn" style="background:#e74c3c; margin-top:15px;" onclick="closeLibrary()">CLOSE</button>
+</div>
+
+<div id="ui-panel">
+    <div class="stat-box">💰 $<span id="cash">150</span></div>
+    <div class="stat-box">📦 <span id="stock">0</span>/<span id="max-stock">4</span></div>
+    <div class="stat-box">⭐ LVL: <span id="level">1</span></div>
+    <button class="game-btn" style="background: #27ae60;" onclick="openLibrary()">CHOOSE ITEMS</button>
+    <button class="game-btn" style="background: #f39c12;" onclick="upgradeShop()">UPGRADE SHOP ($200)</button>
+    <div style="font-size:12px; color:#5d4037;">Use ⬅️ ➡️ to Move</div>
 </div>
 
 <script>
-    let cash = 100, stock = 0, isWaiting = false, maxStock = 8;
+    let cash = 150, stock = 0, level = 1, maxStock = 4, isWaiting = false;
+    let playerPos = 50; // Percentage
     let itemsInStock = [];
-    const customerImages = ["ladycustomar.png", "it_man.png"];
-    const demands = ['🍎', '🥤', '🧸'];
+    
+    const itemLibrary = [
+        {emoji: '🍎', price: 20}, {emoji: '🥤', price: 30}, {emoji: '🧸', price: 50},
+        {emoji: '🍕', price: 45}, {emoji: '🍦', price: 15}, {emoji: '🎸', price: 120},
+        {emoji: '💻', price: 300}, {emoji: '☕', price: 10}
+    ];
+    let currentDemand = '';
+
+    // --- PLAYER MOVEMENT ---
+    window.addEventListener('keydown', (e) => {
+        const player = document.getElementById('player-sprite');
+        if (e.key === 'ArrowLeft' && playerPos > 30) playerPos -= 3;
+        if (e.key === 'ArrowRight' && playerPos < 70) playerPos += 3;
+        player.style.left = playerPos + "%";
+    });
+
+    function openLibrary() {
+        const grid = document.getElementById('library-grid');
+        grid.innerHTML = '';
+        itemLibrary.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'lib-item';
+            div.innerHTML = `${item.emoji}<br>$${item.price}`;
+            div.onclick = () => buyItem(item);
+            grid.appendChild(div);
+        });
+        document.getElementById('library-modal').style.display = 'block';
+    }
+
+    function closeLibrary() { document.getElementById('library-modal').style.display = 'none'; }
+
+    function buyItem(item) {
+        if (cash >= item.price && stock < maxStock) {
+            cash -= item.price;
+            stock++;
+            itemsInStock.push(item.emoji);
+            updateUI(); updateShelves();
+        } else { alert("Stock Full or Low Cash!"); }
+    }
+
+    function upgradeShop() {
+        if (cash >= 200) {
+            cash -= 200; level++; maxStock += 4;
+            const container = document.getElementById('game-container');
+            container.style.width = (80 + level*3) + "vw";
+            const shelfContainer = document.getElementById('shelves');
+            const newRack = document.createElement('div');
+            newRack.className = 'rack';
+            newRack.innerHTML = '<div class="shelf-row"><span class="slot"></span><span class="slot"></span></div><div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>';
+            shelfContainer.appendChild(newRack);
+            updateUI();
+        }
+    }
 
     function spawnCustomer() {
         if (isWaiting) return;
         isWaiting = true;
         const cust = document.getElementById('customer-sprite');
-        const bubble = document.getElementById('demand-bubble');
-        const targetDemand = demands[Math.floor(Math.random() * demands.length)];
-        
-        cust.src = customerImages[Math.floor(Math.random() * customerImages.length)];
-        cust.style.left = "38%"; 
-        
+        cust.src = Math.random() > 0.5 ? "ladycustomar.png" : "it_man.png";
+        cust.style.left = "40%"; 
         setTimeout(() => {
-            bubble.innerText = "I want: " + targetDemand;
+            currentDemand = itemLibrary[Math.floor(Math.random() * itemLibrary.length)].emoji;
+            const bubble = document.getElementById('demand-bubble');
+            bubble.innerText = "Need: " + currentDemand;
             bubble.style.display = "block";
-            
-            if (itemsInStock.includes(targetDemand)) {
-                const billBtn = document.getElementById('bill-btn');
-                billBtn.style.display = "block";
-                billBtn.onclick = () => processBill(targetDemand);
-            } else {
-                bubble.innerText = "No " + targetDemand + "? Bye!";
-                setTimeout(customerLeave, 2000);
-            }
+            if (itemsInStock.includes(currentDemand)) document.getElementById('bill-btn').style.display = "block";
+            else { bubble.innerText = "No " + currentDemand + "? Bye!"; setTimeout(customerLeave, 2000); }
         }, 1500);
     }
 
-    function buyItem(emoji, price) {
-        if (cash >= price && stock < maxStock) {
-            cash -= price;
-            stock++;
-            itemsInStock.push(emoji);
-            updateUI();
-            updateShelves();
-        } else {
-            alert(stock >= maxStock ? "Shelf Full! Upgrade please." : "No Cash!");
-        }
-    }
-
-    function upgradeShop() {
-        if (cash >= 200) {
-            cash -= 200;
-            maxStock += 4; // Capacity increases
-            updateUI();
-            alert("Shop Upgraded! Max Stock: " + maxStock);
-        } else {
-            alert("Need $200 for Upgrade!");
-        }
-    }
-
-    function processBill(emoji) {
-        cash += 60;
-        stock--;
-        const index = itemsInStock.indexOf(emoji);
-        if (index > -1) itemsInStock.splice(index, 1);
-        
-        updateUI();
-        updateShelves();
+    function processBill() {
+        cash += 70; stock--;
+        itemsInStock.splice(itemsInStock.indexOf(currentDemand), 1);
         document.getElementById('bill-btn').style.display = "none";
-        document.getElementById('demand-bubble').innerText = "Thanks! 😊";
+        document.getElementById('demand-bubble').innerText = "Thanks! 🛒";
+        updateUI(); updateShelves();
         setTimeout(customerLeave, 1000);
     }
 
@@ -194,26 +193,23 @@
         document.getElementById('demand-bubble').style.display = "none";
         const cust = document.getElementById('customer-sprite');
         cust.style.left = "110%";
-        setTimeout(() => {
-            cust.style.transition = "none"; cust.style.left = "-300px";
-            setTimeout(() => { cust.style.transition = "left 1.5s linear"; isWaiting = false; }, 50);
-        }, 1500);
+        setTimeout(() => { cust.style.transition="none"; cust.style.left="-300px"; setTimeout(()=> {cust.style.transition="left 1.5s linear"; isWaiting=false;}, 50); }, 1500);
     }
 
     function updateShelves() {
-        for (let i = 1; i <= 8; i++) {
-            const slot = document.getElementById('s' + i);
-            if(slot) slot.innerText = itemsInStock[i-1] || "";
-        }
+        const slots = document.querySelectorAll('.slot');
+        slots.forEach((slot, i) => slot.innerText = itemsInStock[i] || "");
     }
 
     function updateUI() {
         document.getElementById('cash').innerText = cash;
         document.getElementById('stock').innerText = stock;
         document.getElementById('max-stock').innerText = maxStock;
+        document.getElementById('level').innerText = level;
     }
 
-    setInterval(spawnCustomer, 5000);
+    setInterval(spawnCustomer, 6000);
+    updateUI();
 </script>
 </body>
 </html>
