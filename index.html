@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Final Fix</title>
+    <title>Shop Simulator - Emoji Edition</title>
     <style>
         body {
             margin: 0; overflow: hidden; display: flex;
@@ -16,68 +16,62 @@
             justify-content: flex-end; align-items: center;
         }
 
-        /* Background Racks */
+        /* --- Emoji Racks --- */
         .shelf-container {
-            position: absolute; top: 15%; width: 80%;
+            position: absolute; top: 10%; width: 90%;
             display: flex; justify-content: space-around; z-index: 2;
         }
         .rack {
-            width: 300px; height: 180px; background: #5d4037;
+            width: 350px; height: 200px; background: #5d4037;
             border: 6px solid #4a332a; display: grid;
             grid-template-rows: repeat(2, 1fr); gap: 10px; padding: 10px;
         }
         .shelf-row {
             border-bottom: 4px solid #4a332a; display: flex;
-            justify-content: space-around; align-items: flex-end;
+            justify-content: space-around; align-items: center; font-size: 40px;
         }
-        .item-pixel { width: 30px; height: 40px; background: #e74c3c; border-radius: 4px; }
 
-        /* Floor Alignment */
         .floor {
             position: absolute; bottom: 0; width: 100%; height: 35%;
             background: #5d4037; border-top: 10px solid #4a332a; z-index: 1;
         }
 
-        /* Counter */
         .counter {
             position: absolute; bottom: 28%; width: 500px; height: 150px;
             background: #8b4513; border: 6px solid #5d4037; z-index: 10;
         }
 
-        /* Player Image from GitHub */
         #player-sprite {
             position: absolute; bottom: 40%; width: 240px; 
             z-index: 5; image-rendering: pixelated;
         }
 
-        /* CUSTOMER POSITION FIX: Grounded on floor */
         #customer-sprite {
             position: absolute; bottom: 12%; left: -300px; 
             width: 220px; z-index: 20; transition: left 1.5s linear;
             image-rendering: pixelated;
         }
 
-        /* UI Panel */
+        /* --- UI & Buttons --- */
         #ui-panel {
             position: absolute; bottom: 0; width: 100%; height: 160px;
             background: #e1b382; border-top: 8px solid #5d4037;
             display: flex; justify-content: center; align-items: center;
-            gap: 40px; z-index: 100;
+            gap: 20px; z-index: 100;
         }
 
         .stat-box {
-            background: #5d4037; color: #f1c40f; padding: 12px 25px;
-            border-radius: 10px; font-size: 24px; font-weight: bold;
-            border: 3px solid #f3c592; min-width: 160px; text-align: center;
+            background: #5d4037; color: #f1c40f; padding: 10px 20px;
+            border-radius: 10px; font-size: 20px; font-weight: bold;
+            border: 3px solid #f3c592; min-width: 140px; text-align: center;
         }
 
         .game-btn {
-            padding: 20px 40px; font-size: 22px; font-weight: bold;
+            padding: 15px 25px; font-size: 18px; font-weight: bold;
             cursor: pointer; border: none; border-radius: 12px;
             color: white; text-transform: uppercase; box-shadow: 0 6px #a04500;
         }
 
-        /* BILL BUTTON FIX: Now appears on the counter */
         #bill-btn { 
             position: absolute; bottom: 45%; left: 50%; 
             transform: translateX(-50%); background: #f1c40f; 
@@ -85,58 +79,104 @@
             box-shadow: 0 6px #c2a10e; padding: 15px 30px;
         }
 
-        #start-overlay {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9);
-            z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        #demand-bubble {
+            position: absolute; bottom: 65%; left: 40%;
+            background: white; color: black; padding: 10px;
+            border-radius: 10px; border: 3px solid black;
+            display: none; font-weight: bold; z-index: 200;
         }
     </style>
 </head>
 <body>
 
-<div id="start-overlay">
-    <h1 style="color: #f1c40f;">🏪 SHOP SIMULATOR</h1>
-    <button class="game-btn" style="background: #27ae60; box-shadow: 0 6px #1e8449;" onclick="startGame()">OPEN SHOP</button>
-</div>
-
 <div id="game-container">
+    <div id="demand-bubble">I want: 🍎</div>
+    
     <div class="shelf-container">
-        <div class="rack"><div class="shelf-row"><div class="item-pixel"></div></div><div class="shelf-row"></div></div>
-        <div class="rack"><div class="shelf-row"></div><div class="shelf-row"></div></div>
+        <div class="rack">
+            <div class="shelf-row"><span id="s1"></span><span id="s2"></span></div>
+            <div class="shelf-row"><span id="s3"></span><span id="s4"></span></div>
+        </div>
+        <div class="rack">
+            <div class="shelf-row"><span id="s5"></span><span id="s6"></span></div>
+            <div class="shelf-row"><span id="s7"></span><span id="s8"></span></div>
+        </div>
     </div>
+
     <div class="floor"></div>
     <img src="player.png" id="player-sprite">
     <div class="counter"></div>
     <img src="ladycustomar.png" id="customer-sprite">
     
-    <button id="bill-btn" class="game-btn" onclick="processBill()">BILL PLEASE! 🧾</button>
+    <button id="bill-btn" class="game-btn" onclick="processBill()">SELL ITEM 🧾</button>
 
     <div id="ui-panel">
-        <div class="stat-box">CASH: $<span id="cash">0</span></div>
-        <div class="stat-box">STOCK: <span id="stock">0</span>/5</div>
-        <button class="game-btn" style="background: #d35400;" onclick="refill()">REFILL</button>
+        <div class="stat-box">CASH: $<span id="cash">100</span></div>
+        <div class="stat-box">STOCK: <span id="stock">0</span>/8</div>
+        <button class="game-btn" style="background: #27ae60;" onclick="buyItem('🍎', 20)">BUY APPLE ($20)</button>
+        <button class="game-btn" style="background: #3498db;" onclick="buyItem('🥤', 30)">BUY SODA ($30)</button>
+        <button class="game-btn" style="background: #9b59b6;" onclick="buyItem('🧸', 50)">BUY TOY ($50)</button>
     </div>
 </div>
 
 <script>
-    let cash = 0, stock = 0, isWaiting = false;
+    let cash = 100, stock = 0, isWaiting = false;
+    let itemsInStock = [];
     const customerImages = ["ladycustomar.png", "it_man.png"];
-
-    function startGame() {
-        document.getElementById('start-overlay').style.display = 'none';
-        setInterval(() => { if (!isWaiting && stock > 0) spawnCustomer(); }, 4000);
-    }
+    const demands = ['🍎', '🥤', '🧸'];
 
     function spawnCustomer() {
+        if (isWaiting) return;
         isWaiting = true;
         const cust = document.getElementById('customer-sprite');
+        const bubble = document.getElementById('demand-bubble');
+        const targetDemand = demands[Math.floor(Math.random() * demands.length)];
+        
         cust.src = customerImages[Math.floor(Math.random() * customerImages.length)];
         cust.style.left = "40%"; 
-        setTimeout(() => { document.getElementById('bill-btn').style.display = "block"; }, 1500);
+        
+        setTimeout(() => {
+            bubble.innerText = "I want: " + targetDemand;
+            bubble.style.display = "block";
+            
+            // Check if player has demanded item
+            if (itemsInStock.includes(targetDemand)) {
+                document.getElementById('bill-btn').style.display = "block";
+                document.getElementById('bill-btn').onclick = () => processBill(targetDemand);
+            } else {
+                bubble.innerText = "No " + targetDemand + "? Bye!";
+                setTimeout(customerLeave, 2000);
+            }
+        }, 1500);
     }
 
-    function processBill() {
-        cash += 30; stock--; updateUI();
+    function buyItem(emoji, price) {
+        if (cash >= price && stock < 8) {
+            cash -= price;
+            stock++;
+            itemsInStock.push(emoji);
+            updateUI();
+            updateShelves();
+        } else {
+            alert(stock >= 8 ? "Shelf Full!" : "No Cash!");
+        }
+    }
+
+    function processBill(emoji) {
+        cash += 60; // Selling price
+        stock--;
+        const index = itemsInStock.indexOf(emoji);
+        if (index > -1) itemsInStock.splice(index, 1);
+        
+        updateUI();
+        updateShelves();
         document.getElementById('bill-btn').style.display = "none";
+        document.getElementById('demand-bubble').innerText = "Thanks! 😊";
+        setTimeout(customerLeave, 1000);
+    }
+
+    function customerLeave() {
+        document.getElementById('demand-bubble').style.display = "none";
         const cust = document.getElementById('customer-sprite');
         cust.style.left = "110%";
         setTimeout(() => {
@@ -145,8 +185,18 @@
         }, 1500);
     }
 
-    function refill() { if (cash >= 50 || stock === 0) { if (cash >= 50) cash -= 50; stock = 5; updateUI(); } }
-    function updateUI() { document.getElementById('cash').innerText = cash; document.getElementById('stock').innerText = stock; }
+    function updateShelves() {
+        for (let i = 1; i <= 8; i++) {
+            document.getElementById('s' + i).innerText = itemsInStock[i-1] || "";
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('cash').innerText = cash;
+        document.getElementById('stock').innerText = stock;
+    }
+
+    setInterval(spawnCustomer, 5000);
 </script>
 </body>
 </html>
