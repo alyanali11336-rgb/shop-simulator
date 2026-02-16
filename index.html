@@ -2,96 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - UI in Skin Area</title>
+    <title>Shop Simulator - Final Physics Fix</title>
     <style>
         body { 
             background: #f3c592; /* Skin color outer area */
-            margin: 0; 
-            display: flex; 
-            flex-direction: column;
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; 
+            height: 100vh; overflow: hidden;
+            font-family: 'Courier New', monospace; 
         }
         
-        /* Game Screen Container */
         #game-window {
-            position: relative; 
-            width: 800px; 
-            height: 600px; /* Thoda chota kiya taaki UI buttons niche fit ho sakein */
+            position: relative; width: 800px; height: 600px;
             background: #222 url('background.png') no-repeat center;
-            background-size: 100% 100%; 
-            border: 8px solid #5d4037; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            overflow: hidden; 
+            background-size: 100% 100%; border: 8px solid #5d4037; 
+            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* 2 SHELVES - Bottom par fixed */
-        .shelf { width: 150px; bottom: 280px; z-index: 1; }
-        #s1 { left: 80px; } 
-        #s2 { left: 570px; } 
+        /* --- GRAVITY & ALIGNMENT FIX --- */
+        
+        /* Shelves: Two grounded against the back wall */
+        .shelf { width: 160px; bottom: 310px; z-index: 1; }
+        #s1 { left: 90px; } 
+        #s2 { left: 550px; } 
 
-        /* PLAYER & COUNTER */
-        #player { width: 180px; bottom: 290px; left: 310px; z-index: 5; }
-        #counter { width: 300px; bottom: 180px; left: 250px; z-index: 10; }
+        /* Player: Standing exactly behind the counter on the floor */
+        #player { width: 190px; bottom: 315px; left: 305px; z-index: 5; }
 
-        /* CUSTOMER */
+        /* Counter: Small and sitting on the floor tiles */
+        #counter { width: 320px; bottom: 180px; left: 240px; z-index: 10; }
+
+        /* Customer: Walking in the very front foreground */
         #customer { 
-            width: 220px; bottom: 20px; 
-            left: -300px; 
-            z-index: 20; transition: all 1.5s linear; 
+            width: 240px; bottom: 10px; 
+            left: -300px; z-index: 20; 
+            transition: all 1.5s linear; 
         }
 
-        /* Status Bubble over Customer */
-        #speech-bubble {
+        #speech {
             position: absolute; background: white; padding: 5px 10px;
             border-radius: 10px; border: 2px solid black; font-weight: bold;
-            display: none; z-index: 30; font-size: 14px;
+            display: none; z-index: 30; font-size: 16px;
         }
 
-        /* --- UI PANEL (Skin Color Area) --- */
+        /* --- UI PANEL (Skin Area) --- */
         #ui-panel {
-            width: 800px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #e1b382; /* Slightly darker skin for contrast */
-            border-radius: 0 0 15px 15px;
-            border: 4px solid #5d4037;
-            margin-top: -4px; /* Attaches to game window */
+            width: 800px; padding: 20px; display: flex;
+            justify-content: space-between; align-items: center;
+            background: #e1b382; border: 4px solid #5d4037;
+            border-radius: 0 0 15px 15px; margin-top: -4px;
         }
 
-        .stats-container { display: flex; gap: 20px; }
-        .stat-item { 
-            background: #5d4037; color: white; padding: 10px 15px; 
-            border-radius: 8px; font-weight: bold; font-size: 18px;
-            min-width: 120px; text-align: center;
-        }
-
-        .button-container { display: flex; gap: 10px; }
-        button { 
-            padding: 12px 20px; cursor: pointer; border: none; 
-            font-weight: bold; border-radius: 8px; color: white; 
-            font-size: 14px; text-transform: uppercase;
-            transition: 0.2s;
-        }
+        .stat-item { background: #5d4037; color: white; padding: 10px; border-radius: 8px; font-weight: bold; }
+        button { padding: 12px 25px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; }
         .btn-refill { background: #d35400; }
         .btn-upgrade { background: #27ae60; }
-        button:hover { filter: brightness(1.1); transform: scale(1.05); }
-        button:active { transform: scale(0.95); }
-        button:disabled { background: #7f8c8d; cursor: not-allowed; }
-
     </style>
 </head>
 <body>
 
 <div id="game-window">
-    <div id="speech-bubble">WANT: MILK</div>
+    <div id="speech"></div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
     <img src="shelf_full.png" id="s2" class="sprite shelf">
@@ -101,54 +74,50 @@
 </div>
 
 <div id="ui-panel">
-    <div class="stats-container">
+    <div style="display:flex; gap:15px;">
         <div class="stat-item">💰 $<span id="bal">0</span></div>
         <div class="stat-item">📦 STOCK: <span id="stock">5</span>/5</div>
-        <div class="stat-item">⭐ LVL: <span id="lvl">1</span></div>
     </div>
-    
-    <div class="button-container">
-        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">Refill Stock ($50)</button>
-        <button class="btn-upgrade" onclick="levelUp()">Upgrade Shop ($200)</button>
+    <div style="display:flex; gap:10px;">
+        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">Refill ($50)</button>
+        <button class="btn-upgrade" onclick="levelUp()">Upgrade ($200)</button>
     </div>
 </div>
 
 <script>
     let cash = 0;
     let stock = 5;
-    let level = 1;
     let isServing = false;
-    const items = ["MILK", "BREAD", "SODA", "EGGS"];
+    // Added your new lady customer file name
+    const customerImages = ["customer.png", "lady_customer.png"]; 
+    const items = ["MILK", "BREAD", "SODA"];
 
-    // HAR 5 SECOND MEIN CUSTOMER
     setInterval(() => {
-        if (!isServing && stock > 0) {
-            serveCustomer();
-        }
+        if (!isServing && stock > 0) serveCustomer();
     }, 5000);
 
     function serveCustomer() {
         isServing = true;
         const cust = document.getElementById('customer');
-        const bubble = document.getElementById('speech-bubble');
+        const speech = document.getElementById('speech');
 
-        cust.style.left = "290px"; 
+        // Randomly pick between man or lady customer
+        cust.src = customerImages[Math.floor(Math.random() * customerImages.length)];
+        
+        cust.style.left = "280px"; 
 
         setTimeout(() => {
-            const randomItem = items[Math.floor(Math.random() * items.length)];
-            bubble.innerText = "ORDER: " + randomItem;
-            bubble.style.display = "block";
-            bubble.style.left = "330px";
-            bubble.style.bottom = "240px";
+            speech.innerText = "BUY: " + items[Math.floor(Math.random() * items.length)];
+            speech.style.display = "block";
+            speech.style.left = "320px";
+            speech.style.bottom = "240px";
 
             setTimeout(() => {
-                let profit = 20 + (level * 10);
-                cash += profit;
+                cash += 25;
                 stock--;
-                
                 document.getElementById('bal').innerText = cash;
                 document.getElementById('stock').innerText = stock;
-                bubble.style.display = "none";
+                speech.style.display = "none";
 
                 if (stock <= 0) {
                     document.getElementById('s1').src = 'shelf_empty.png';
@@ -180,17 +149,6 @@
             document.getElementById('refillBtn').style.display = "none";
         }
     }
-
-    function levelUp() {
-        if (cash >= 200) {
-            cash -= 200;
-            level++;
-            document.getElementById('bal').innerText = cash;
-            document.getElementById('lvl').innerText = level;
-            alert("Level Up! Profit increased!");
-        }
-    }
 </script>
-
 </body>
 </html>
