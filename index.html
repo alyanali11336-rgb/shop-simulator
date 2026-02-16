@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Sim - Lady Customer Version</title>
+    <title>Shop Sim - Fixed Controls</title>
     <style>
-        /* CSS Same Rahega */
         body { 
             background: #222; margin: 0; display: flex; 
             justify-content: center; align-items: center; 
@@ -20,7 +19,7 @@
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* CUSTOMER: Linked to lady_customer.png */
+        /* Customer Gravity Fix */
         #customer { 
             width: 280px; bottom: 180px; left: -350px; 
             z-index: 20; transition: left 1.5s linear; 
@@ -33,29 +32,37 @@
             bottom: 450px; left: 300px;
         }
 
-        .ui-btn { position: absolute; cursor: pointer; }
-        #refill-hitbox { width: 220px; height: 60px; bottom: 80px; right: 40px; }
-        #upgrade-hitbox { width: 220px; height: 60px; bottom: 80px; right: 280px; }
-        #bill-hitbox { width: 300px; height: 100px; bottom: 250px; left: 250px; display: none; }
-
-        .stat-text { position: absolute; color: white; font-size: 24px; font-weight: bold; }
-        #cash-val { bottom: 135px; left: 110px; }
-        #stock-val { bottom: 135px; left: 300px; }
-
-        #start-screen {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.7);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 100; color: white;
+        /* BUTTONS: Inhe visible rakha hai testing ke liye, baad mein border:none kar sakte hain */
+        .ui-btn { 
+            position: absolute; cursor: pointer; 
+            border: 2px solid rgba(255,255,255,0.2); 
+            background: rgba(255,255,255,0.05);
+            z-index: 100;
         }
-        #start-btn { padding: 20px 40px; font-size: 24px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 10px; }
+        
+        #refill-hitbox { width: 180px; height: 60px; bottom: 70px; right: 40px; }
+        #upgrade-hitbox { width: 180px; height: 60px; bottom: 70px; right: 240px; }
+        #bill-hitbox { width: 250px; height: 120px; bottom: 250px; left: 275px; display: none; }
+
+        .stat-text { position: absolute; color: #ffcc00; font-size: 24px; font-weight: bold; pointer-events: none; }
+        #cash-val { bottom: 132px; left: 115px; }
+        #stock-val { bottom: 132px; left: 305px; }
+
+        #overlay {
+            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 200; color: white;
+        }
+        #start-btn { padding: 20px 50px; font-size: 30px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 15px; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="start-screen">
-        <h1>Pixel Shop Sim</h1>
-        <button id="start-btn" onclick="startGame()">START GAME</button>
+    <div id="overlay">
+        <h2 style="color: #f1c40f;">SHOP SIMULATOR</h2>
+        <button id="start-btn" onclick="initGame()">PLAY NOW</button>
+        <p>Make sure music.mp3 is in your folder!</p>
     </div>
 
     <div id="speech"></div>
@@ -64,76 +71,73 @@
 
     <img src="lady_customer.png" id="customer" class="sprite">
 
-    <div id="refill-hitbox" class="ui-btn" onclick="refill()"></div>
-    <div id="upgrade-hitbox" class="ui-btn" onclick="upgrade()"></div>
-    <div id="bill-hitbox" class="ui-btn" onclick="generateBill()"></div>
+    <div id="refill-hitbox" class="ui-btn" title="Refill Shop" onclick="refill()"></div>
+    <div id="upgrade-hitbox" class="ui-btn" title="Upgrade" onclick="upgrade()"></div>
+    <div id="bill-hitbox" class="ui-btn" title="Generate Bill" onclick="generateBill()"></div>
 </div>
 
-<audio id="bgMusic" src="music.mp3" loop></audio>
-<audio id="coinSound" src="coin.mp3"></audio>
+<audio id="bgMusic" loop>
+    <source src="music.mp3" type="audio/mpeg">
+</audio>
+<audio id="coinSound">
+    <source src="coin.mp3" type="audio/mpeg">
+</audio>
 
 <script>
-    let cash = 0;
-    let stock = 0; 
-    let isCustomerWaiting = false;
+    let cash = 0, stock = 0, isCustomerWaiting = false;
 
-    function startGame() {
-        document.getElementById('start-screen').style.display = 'none';
-        document.getElementById('bgMusic').volume = 0.3;
-        document.getElementById('bgMusic').play();
-        
+    // Music Fix: Browser permissions
+    function initGame() {
+        document.getElementById('overlay').style.display = 'none';
+        let music = document.getElementById('bgMusic');
+        music.play().then(() => {
+            console.log("Music Playing");
+        }).catch(err => {
+            console.log("Music Error: Make sure music.mp3 exists!");
+        });
+
+        // Customer Logic
         setInterval(() => {
             if (!isCustomerWaiting && stock > 0) spawnCustomer();
-        }, 5000);
+        }, 4000);
     }
 
     function spawnCustomer() {
         isCustomerWaiting = true;
         const cust = document.getElementById('customer');
         const speech = document.getElementById('speech');
-        const billBtn = document.getElementById('bill-hitbox');
+        const bill = document.getElementById('bill-hitbox');
 
-        // Customer screen ke andar aayegi
         cust.style.left = "260px"; 
-
         setTimeout(() => {
             speech.innerText = "BILL PLEASE!";
             speech.style.display = "block";
-            billBtn.style.display = "block";
+            bill.style.display = "block";
         }, 1500);
     }
 
     function generateBill() {
-        document.getElementById('coinSound').currentTime = 0; 
         document.getElementById('coinSound').play();
-
         cash += 25;
         stock--;
         updateUI();
-        leave();
+        
+        document.getElementById('bill-hitbox').style.display = "none";
+        document.getElementById('speech').innerText = "THANKS!";
+        setTimeout(leave, 1000);
     }
 
     function leave() {
-        const cust = document.getElementById('customer');
-        const speech = document.getElementById('speech');
-        const billBtn = document.getElementById('bill-hitbox');
-
-        speech.innerText = "THANKS!";
-        billBtn.style.display = "none";
-
+        document.getElementById('speech').style.display = "none";
+        document.getElementById('customer').style.left = "900px";
         setTimeout(() => {
-            speech.style.display = "none";
-            cust.style.left = "900px"; // Exit right
-            
+            document.getElementById('customer').style.transition = "none";
+            document.getElementById('customer').style.left = "-350px";
             setTimeout(() => {
-                cust.style.transition = "none";
-                cust.style.left = "-350px"; // Reset to left
-                setTimeout(() => {
-                    cust.style.transition = "left 1.5s linear";
-                    isCustomerWaiting = false;
-                }, 50);
-            }, 1500);
-        }, 1000);
+                document.getElementById('customer').style.transition = "left 1.5s linear";
+                isCustomerWaiting = false;
+            }, 50);
+        }, 1500);
     }
 
     function refill() {
@@ -145,20 +149,19 @@
         }
     }
 
-    function updateUI() {
-        document.getElementById('cash-val').innerText = cash;
-        document.getElementById('stock-val').innerText = stock;
-        
-        if (stock <= 0) {
-            document.getElementById('game-container').style.backgroundImage = "url('background.png')";
-        }
-    }
-
     function upgrade() {
         if (cash >= 200) {
             cash -= 200;
             updateUI();
-            alert("Shop Upgraded!");
+            alert("Upgraded!");
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('cash-val').innerText = cash;
+        document.getElementById('stock-val').innerText = stock;
+        if (stock <= 0) {
+            document.getElementById('game-container').style.backgroundImage = "url('background.png')";
         }
     }
 </script>
