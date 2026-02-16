@@ -3,48 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shop Sim Pro - Fixed</title>
+    <title>Shop Sim - Visual Items</title>
     <style>
         :root { --ui-panel: #3e2723; --gold: #f1c40f; }
         body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
 
-        /* Top Header for Stats */
         #top-stats {
             display: grid; grid-template-columns: repeat(4, 1fr);
-            background: var(--ui-panel); padding: 10px; gap: 5px;
-            border-bottom: 4px solid var(--gold); z-index: 100;
+            background: var(--ui-panel); padding: 12px; border-bottom: 4px solid var(--gold); z-index: 100;
         }
-        .stat-item { color: var(--gold); text-align: center; font-size: 0.8rem; font-weight: bold; border-right: 1px solid #5d4037; }
+        .stat-item { color: var(--gold); text-align: center; font-size: 0.9rem; font-weight: bold; border-right: 1px solid #5d4037; }
 
-        /* Game Stage Area */
         #game-view {
             flex: 1; position: relative; 
-            background: linear-gradient(#2c3e50 65%, #4a332d 65%); /* Perfect Floor Line */
+            background: linear-gradient(#2c3e50 65%, #4a332d 65%);
         }
 
-        /* Gravity Fixed Assets */
-        #counter-img { position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); width: 220px; z-index: 15; }
-        .shelf { position: absolute; width: 140px; z-index: 5; }
-        #shelf-1 { top: 25%; left: 5%; }
-        #shelf-2 { top: 25%; right: 5%; }
+        /* Shelves & Items Container */
+        .shelf-container { position: absolute; width: 150px; height: 100px; z-index: 5; top: 25%; }
+        #sc-1 { left: 5%; }
+        #sc-2 { right: 5%; }
+        
+        .shelf-img { width: 100%; position: absolute; bottom: 0; }
+        .items-grid { 
+            position: absolute; top: 0; left: 10%; width: 80%; height: 70%;
+            display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 2px; font-size: 1.2rem;
+        }
 
-        /* Characters */
-        #player { position: absolute; bottom: 33%; left: 50%; transform: translateX(-50%); width: 100px; z-index: 10; }
-        #customer { position: absolute; bottom: 8%; left: -150px; width: 130px; z-index: 20; transition: left 1.5s linear; }
-        #cleaner { position: absolute; bottom: 8%; width: 90px; z-index: 18; display: none; }
+        #counter-img { position: absolute; bottom: 26%; left: 50%; transform: translateX(-50%); width: 240px; z-index: 15; }
 
-        /* Notification */
+        /* Characters Sizing */
+        .character { position: absolute; height: 155px; width: auto; transition: left 1.5s linear; }
+        #player { bottom: 35%; left: 50%; transform: translateX(-50%); z-index: 10; }
+        #customer { bottom: 10%; left: -200px; z-index: 20; }
+        #cleaner { bottom: 10%; z-index: 18; display: none; }
+
         #collect-money { 
-            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
             background: #f39c12; color: white; padding: 15px 30px; border-radius: 50px;
             font-weight: bold; display: none; z-index: 200; cursor: pointer; border: 3px solid white;
         }
 
-        /* Bottom Controls */
-        #controls { height: 15vh; background: #e1b382; display: flex; padding: 10px; gap: 10px; border-top: 5px solid #3e2723; }
-        .btn { flex: 1; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
-        #refill-btn { background: #27ae60; }
-        #hire-btn { background: #2980b9; }
+        #controls { height: 12vh; background: #e1b382; display: flex; padding: 10px; gap: 10px; border-top: 5px solid #3e2723; }
+        .btn { flex: 1; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; color: white; }
+        #refill-btn { background: #27ae60; box-shadow: 0 4px 0 #1e8449; }
+        #hire-btn { background: #2980b9; box-shadow: 0 4px 0 #1a5276; }
     </style>
 </head>
 <body>
@@ -57,10 +60,21 @@
 </div>
 
 <div id="game-view">
-    <img src="shelf.png" class="shelf" id="shelf-1"> 
-    <img src="shelf.png" class="shelf" id="shelf-2"> <img src="player.png" id="player"> 
-    <img src="counter.png" id="counter-img"> <img src="man_idle.png" id="customer"> 
-    <img src="cleaner_idle.png" id="cleaner">
+    <div class="shelf-container" id="sc-1">
+        <div class="items-grid" id="items-1"></div>
+        <img src="shelf.png" class="shelf-img">
+    </div>
+
+    <div class="shelf-container" id="sc-2">
+        <div class="items-grid" id="items-2"></div>
+        <img src="shelf.png" class="shelf-img">
+    </div>
+    
+    <img src="player.png" class="character" id="player"> 
+    <img src="counter.png" id="counter-img"> 
+    
+    <img src="man_idle.png" class="character" id="customer"> 
+    <img src="cleaner_idle.png" class="character" id="cleaner">
 
     <div id="collect-money" onclick="doSale()">COLLECT MONEY 💰</div>
 </div>
@@ -73,10 +87,34 @@
 <script>
     let money = 200, level = 1, stock = 0, xp = 0, busy = false;
     let currentCust = "";
+    const itemEmojis = ["🍎", "🍞", "🥛", "🥤", "🍪", "🍕"];
+
+    function updateUI() {
+        document.getElementById('cash').innerText = `$${money}`;
+        document.getElementById('lvl').innerText = level;
+        document.getElementById('stk').innerText = `${stock}/50`;
+        document.getElementById('xp').innerText = `${xp}%`;
+        drawItems();
+    }
+
+    function drawItems() {
+        const grid1 = document.getElementById('items-1');
+        const grid2 = document.getElementById('items-2');
+        grid1.innerHTML = ""; grid2.innerHTML = "";
+        
+        // Shelf 1 displays first 25 items
+        for(let i=0; i<Math.min(stock, 25); i++) {
+            grid1.innerHTML += `<span>${itemEmojis[i % itemEmojis.length]}</span>`;
+        }
+        // Shelf 2 displays next 25 items
+        for(let i=25; i<Math.min(stock, 50); i++) {
+            grid2.innerHTML += `<span>${itemEmojis[i % itemEmojis.length]}</span>`;
+        }
+    }
 
     function refill() {
         if (money >= 50) {
-            money -= 50; stock = Math.min(stock + 25, 50);
+            money -= 50; stock = Math.min(stock + 20, 50);
             updateUI();
         }
     }
@@ -85,7 +123,7 @@
         if (busy) return;
         busy = true;
         const c = document.getElementById('customer');
-        const types = ["man", "old_lady", "police"]; // From GitHub
+        const types = ["man", "old_lady", "police"];
         currentCust = types[Math.floor(Math.random() * types.length)];
         
         c.src = `${currentCust}_walk.png`;
@@ -99,7 +137,7 @@
     }
 
     function doSale() {
-        let reward = (currentCust === "police") ? 100 : 50;
+        let reward = (currentCust === "police") ? 120 : 60;
         money += reward; stock--; xp += 20;
         document.getElementById('collect-money').style.display = 'none';
         if (xp >= 100) { xp = 0; level++; }
@@ -112,7 +150,7 @@
         c.src = `${currentCust}_walk.png`;
         c.style.left = "110%";
         setTimeout(() => {
-            c.style.transition = "none"; c.style.left = "-150px";
+            c.style.transition = "none"; c.style.left = "-200px";
             setTimeout(() => { c.style.transition = "left 1.5s linear"; busy = false; }, 100);
         }, 1500);
     }
@@ -120,19 +158,10 @@
     function hire() {
         if (money >= 150) {
             money -= 150;
-            const cl = document.getElementById('cleaner');
-            cl.style.display = 'block';
-            cl.src = "cleaner_walk_right.png"; //
-            cl.style.left = "80%";
+            document.getElementById('cleaner').style.display = 'block';
+            document.getElementById('cleaner').style.left = "75%";
             updateUI();
         }
-    }
-
-    function updateUI() {
-        document.getElementById('cash').innerText = `$${money}`;
-        document.getElementById('lvl').innerText = level;
-        document.getElementById('stk').innerText = `${stock}/50`;
-        document.getElementById('xp').innerText = `${xp}%`;
     }
 
     setInterval(spawn, 5000);
