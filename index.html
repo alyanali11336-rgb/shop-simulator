@@ -2,77 +2,84 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Locked Borders</title>
+    <title>Shop Simulator Pro - Frame Edition</title>
     <style>
+        /* Window ke bahar Skin Color add kiya gaya hai */
         body { 
-            background: #111; margin: 0; display: flex; justify-content: center; 
-            align-items: center; height: 100vh; overflow: hidden;
+            background: #f3c592; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden;
             font-family: 'Courier New', monospace; 
         }
         
         #game-window {
-            position: relative; width: 800px; height: 800px;
+            position: relative; 
+            width: 800px; 
+            height: 800px;
             background: #222 url('background.png') no-repeat center;
-            background-size: 100% 100%; border: 10px solid #333;
-            /* Isse koi bhi sprite image se bahar nahi dikhega */
-            overflow: hidden; 
+            background-size: 100% 100%; 
+            border: 12px solid #5d4037; /* Dark wood border */
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            overflow: hidden; /* Sab kuch image ke andar rahega */
         }
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* --- 2 SHELVES ATTACHED TO GROUND --- */
-        .shelf { width: 170px; bottom: 385px; z-index: 1; }
-        #s1 { left: 100px; } 
-        #s2 { left: 530px; } 
+        /* 2 SHELVES - Zameen par fix */
+        .shelf { width: 170px; bottom: 390px; z-index: 1; }
+        #s1 { left: 80px; } 
+        #s2 { left: 550px; } 
 
-        /* --- PLAYER & COUNTER --- */
-        #player { width: 190px; bottom: 395px; left: 305px; z-index: 5; }
-        #counter { width: 320px; bottom: 250px; left: 240px; z-index: 10; }
+        /* PLAYER & COUNTER */
+        #player { width: 220px; bottom: 395px; left: 290px; z-index: 5; }
+        #counter { width: 340px; bottom: 250px; left: 230px; z-index: 10; }
 
-        /* --- CUSTOMER (Grounded and Big) --- */
+        /* CUSTOMER - Zameen par chalte hue */
         #customer { 
-            width: 240px; bottom: 30px; 
-            left: -260px; /* Start position inside hidden area */
-            z-index: 20; transition: all 1.2s ease-in-out; 
+            width: 260px; bottom: 30px; 
+            left: -300px; 
+            z-index: 20; transition: all 1.5s linear; 
         }
 
-        /* Status Text (Finding Item) */
+        /* CUSTOMER TEXT */
         #finding-text {
-            position: absolute; width: 180px; text-align: center;
-            color: #0f0; font-weight: bold; font-size: 20px;
-            background: rgba(0,0,0,0.8); padding: 5px; border: 2px solid #0f0;
-            border-radius: 8px; display: none; z-index: 30;
+            position: absolute; width: 200px; text-align: center;
+            color: #000; font-weight: bold; font-size: 18px;
+            background: #fff; padding: 8px; border: 3px solid #000;
+            border-radius: 10px; display: none; z-index: 30;
         }
 
-        /* UI HUD */
+        /* HUD & BUTTONS */
         #hud {
-            position: absolute; top: 15px; width: 100%;
+            position: absolute; top: 20px; width: 100%;
             display: flex; justify-content: space-around; z-index: 100;
         }
-        .stats { background: rgba(0,0,0,0.9); color: #fff; padding: 8px 15px; border: 2px solid #444; border-radius: 5px; font-size: 20px; }
+        .stats { background: rgba(0,0,0,0.9); color: #0f0; padding: 10px 20px; border: 2px solid #0f0; border-radius: 8px; font-size: 22px; }
 
         #controls {
             position: absolute; bottom: 30px; width: 100%;
-            display: flex; justify-content: center; gap: 10px; z-index: 100;
+            display: flex; justify-content: center; gap: 20px; z-index: 100;
         }
 
-        button { padding: 12px 25px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; color: white; font-size: 16px; transition: 0.2s; }
-        .btn-sale { background: #27ae60; box-shadow: 0 4px #1e8449; }
-        .btn-upgrade { background: #2980b9; box-shadow: 0 4px #1b4f72; }
-        .btn-refill { background: #e67e22; box-shadow: 0 4px #a05817; }
-        button:active { transform: translateY(2px); box-shadow: none; }
-        button:disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
+        button { padding: 15px 35px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; font-size: 18px; box-shadow: 0 5px #000; }
+        .btn-buy { background: #2980b9; }
+        .btn-refill { background: #e67e22; }
+        button:active { transform: translateY(3px); box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div id="game-window">
     <div id="hud">
-        <div class="stats">CASH: $<span id="bal">0</span></div>
-        <div class="stats">STOCK: <span id="stock">5</span>/5</div>
+        <div class="stats">💰 $<span id="bal">0</span></div>
+        <div class="stats">📦 STOCK: <span id="stock">5</span>/5</div>
     </div>
 
-    <div id="finding-text">Found it!</div>
+    <div id="finding-text">Checking...</div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
     <img src="shelf_full.png" id="s2" class="sprite shelf">
@@ -82,9 +89,8 @@
     <img src="customer.png" id="customer" class="sprite">
 
     <div id="controls">
-        <button id="saleBtn" class="btn-sale" onclick="startSale()">SALE</button>
-        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">REFILL ($50)</button>
-        <button class="btn-upgrade" onclick="levelUp()">UPGRADE ($200)</button>
+        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">REFILL STOCK ($50)</button>
+        <button class="btn-buy" onclick="levelUp()">UPGRADE SHOP ($200)</button>
     </div>
 </div>
 
@@ -92,26 +98,30 @@
     let cash = 0;
     let stock = 5;
     let level = 1;
+    let isServing = false;
     const items = ["MILK", "BREAD", "SODA", "EGGS"];
 
-    function startSale() {
-        if (stock <= 0) return;
-        
+    // HAR 5 SECOND MEIN CUSTOMER AAYEGA
+    setInterval(() => {
+        if (!isServing && stock > 0) {
+            serveCustomer();
+        }
+    }, 5000);
+
+    function serveCustomer() {
+        isServing = true;
         const cust = document.getElementById('customer');
         const text = document.getElementById('finding-text');
-        const saleBtn = document.getElementById('saleBtn');
 
-        saleBtn.disabled = true;
-        
-        // Walk inside the screen area only
-        cust.style.left = "280px"; 
+        // Customer walks in
+        cust.style.left = "270px"; 
 
         setTimeout(() => {
             const randomItem = items[Math.floor(Math.random() * items.length)];
-            text.innerText = "WANT: " + randomItem;
+            text.innerText = "FINDING: " + randomItem;
             text.style.display = "block";
-            text.style.left = "310px";
-            text.style.bottom = "280px";
+            text.style.left = "300px";
+            text.style.bottom = "320px";
 
             setTimeout(() => {
                 let profit = 20 + (level * 10);
@@ -123,24 +133,24 @@
                 text.style.display = "none";
 
                 if (stock <= 0) {
+                    document.getElementById('s1').src = 'shelf_full.png'; // Reusing your full/empty logic
                     document.getElementById('s1').src = 'shelf_empty.png';
                     document.getElementById('s2').src = 'shelf_empty.png';
-                    document.getElementById('saleBtn').style.display = "none";
                     document.getElementById('refillBtn').style.display = "block";
                 }
 
-                // Walks out of view but stays within overflow:hidden
+                // Customer walks out
                 cust.style.left = "850px"; 
                 setTimeout(() => {
                     cust.style.transition = "none";
-                    cust.style.left = "-260px";
+                    cust.style.left = "-300px";
                     setTimeout(() => { 
-                        cust.style.transition = "all 1.2s ease-in-out"; 
-                        if (stock > 0) saleBtn.disabled = false;
+                        cust.style.transition = "all 1.5s linear"; 
+                        isServing = false;
                     }, 50);
-                }, 1200);
+                }, 1500);
             }, 1500);
-        }, 1200);
+        }, 1500);
     }
 
     function refill() {
@@ -151,8 +161,6 @@
             document.getElementById('stock').innerText = stock;
             document.getElementById('s1').src = 'shelf_full.png';
             document.getElementById('s2').src = 'shelf_full.png';
-            document.getElementById('saleBtn').style.display = "block";
-            document.getElementById('saleBtn').disabled = false;
             document.getElementById('refillBtn').style.display = "none";
         }
     }
@@ -162,7 +170,7 @@
             cash -= 200;
             level++;
             document.getElementById('bal').innerText = cash;
-            alert("Upgrade Successful!");
+            alert("Shop Upgraded!");
         }
     }
 </script>
