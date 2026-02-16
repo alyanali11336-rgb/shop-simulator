@@ -3,52 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Supermarket Sim - 4 Shelves & Music</title>
+    <title>Shop Sim - Stacked Items & Staff Menu</title>
     <style>
-        :root { --ui-panel: #3e2723; --gold: #f1c40f; }
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
+        :root { --ui-panel: #3e2723; --gold: #f1c40f; --brown-floor: #4a332d; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
 
-        /* Stats Bar */
-        #top-stats {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            background: var(--ui-panel); padding: 12px; border-bottom: 4px solid var(--gold); z-index: 100;
-        }
+        /* Top Header & Hiring Menu */
+        #top-bar { background: var(--ui-panel); border-bottom: 4px solid var(--gold); z-index: 100; }
+        #stats { display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px; border-bottom: 1px solid #5d4037; }
         .stat-item { color: var(--gold); text-align: center; font-size: 0.8rem; font-weight: bold; }
+        
+        #hiring-menu { display: flex; justify-content: center; padding: 8px; gap: 10px; background: rgba(0,0,0,0.2); }
+        .hire-btn { background: #2980b9; color: white; border: none; padding: 5px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
 
-        /* Game View with Floor */
-        #game-view { flex: 1; position: relative; background: linear-gradient(#2c3e50 65%, #4a332d 65%); }
+        /* Game Stage */
+        #game-view { flex: 1; position: relative; background: linear-gradient(#2c3e50 65%, var(--brown-floor) 65%); }
 
-        /* 4 Shelves System - Perfectly Aligned */
-        .shelf-container { position: absolute; width: 120px; height: 80px; z-index: 5; }
-        #sc-1 { top: 20%; left: 5%; }
-        #sc-2 { top: 20%; right: 5%; }
-        #sc-3 { top: 40%; left: 5%; }
-        #sc-4 { top: 40%; right: 5%; }
+        /* Organized Shelves & Stacked Items */
+        .shelf-container { position: absolute; width: 110px; height: 80px; z-index: 5; }
+        #sc-1 { top: 15%; left: 5%; }
+        #sc-2 { top: 15%; right: 5%; }
+        #sc-3 { top: 35%; left: 5%; }
+        #sc-4 { top: 35%; right: 5%; }
 
         .shelf-img { width: 100%; position: absolute; bottom: 0; }
         
-        /* Stacked Items Logic */
+        /* Fixed Stack Logic: Emojis sit exactly on shelves */
         .items-stack { 
-            position: absolute; bottom: 15px; width: 100%; 
+            position: absolute; bottom: 12px; width: 100%; 
             display: flex; flex-wrap: wrap-reverse; justify-content: center; 
-            align-items: flex-end; gap: 2px; padding-bottom: 5px;
+            align-items: flex-end; gap: 1px; max-height: 60px; overflow: hidden;
         }
-        .items-stack span { font-size: 1.3rem; line-height: 1; filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.5)); }
+        .items-stack span { font-size: 1.1rem; filter: drop-shadow(1px 1px 0px rgba(0,0,0,0.5)); }
 
-        /* Gravity Fixed Assets */
+        /* Characters & Counter */
         #counter-img { position: absolute; bottom: 26%; left: 50%; transform: translateX(-50%); width: 170px; z-index: 15; }
-        .char { position: absolute; height: 150px; width: auto; transition: left 1.5s linear; }
+        .char { position: absolute; height: 140px; width: auto; transition: left 1.5s linear; }
         #player { bottom: 33%; left: 50%; transform: translateX(-50%); z-index: 10; }
-        #customer { bottom: 10%; left: -200px; z-index: 20; }
+        #customer { bottom: 8%; left: -200px; z-index: 20; }
+        #cleaner { bottom: 8%; z-index: 18; display: none; }
 
+        /* Collect Cash Button */
         #btn-collect { 
-            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            background: #f39c12; color: white; padding: 15px 30px; border-radius: 50px;
-            font-weight: bold; display: none; z-index: 200; border: 3px solid white; box-shadow: 0 0 20px rgba(243,156,18,0.5);
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            background: #f39c12; color: white; padding: 12px 25px; border-radius: 50px;
+            font-weight: bold; display: none; z-index: 200; border: 3px solid white; cursor: pointer;
         }
 
-        #controls { height: 12vh; background: #e1b382; display: flex; padding: 10px; gap: 10px; border-top: 5px solid #3e2723; }
-        .btn-ui { flex: 1; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; color: white; cursor: pointer; }
+        /* Bottom Controls */
+        #footer { height: 10vh; background: #e1b382; display: flex; padding: 10px; gap: 10px; border-top: 5px solid var(--ui-panel); }
+        .btn-main { flex: 1; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; color: white; background: #27ae60; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -57,11 +61,17 @@
     <source src="Aylex - Innovating Care (freetouse.com).mp3" type="audio/mpeg">
 </audio>
 
-<div id="top-stats">
-    <div class="stat-item">CASH<br><span id="cash">$200</span></div>
-    <div class="stat-item">LVL<br><span id="lvl">1</span></div>
-    <div class="stat-item">STOCK<br><span id="stk">0/100</span></div>
-    <div class="stat-item">XP<br><span id="xp">0%</span></div>
+<div id="top-bar">
+    <div id="stats">
+        <div class="stat-item">CASH<br><span id="cash">$200</span></div>
+        <div class="stat-item">LVL<br><span id="lvl">1</span></div>
+        <div class="stat-item">STOCK<br><span id="stk">0/100</span></div>
+        <div class="stat-item">XP<br><span id="xp">0%</span></div>
+    </div>
+    <div id="hiring-menu">
+        <button class="hire-btn" onclick="hireStaff('cleaner')">HIRE CLEANER ($150)</button>
+        <button class="hire-btn" style="background:#8e44ad;">HIRE GUARD ($300)</button>
+    </div>
 </div>
 
 <div id="game-view">
@@ -73,25 +83,24 @@
     <img src="player.png" class="char" id="player"> 
     <img src="counter.png" id="counter-img"> 
     <img src="man_idle.png" class="char" id="customer">
+    <img src="cleaner_idle.png" class="char" id="cleaner">
 
-    <div id="btn-collect" onclick="handleSale()">COLLECT CASH 💰</div>
+    <div id="btn-collect" onclick="doSale()">COLLECT CASH 💰</div>
 </div>
 
-<div id="controls">
-    <button class="btn-ui" style="background:#27ae60;" onclick="refill()">REFILL ($50)</button>
-    <button class="btn-ui" style="background:#2980b9;">UPGRADE SHOP</button>
+<div id="footer">
+    <button class="btn-main" onclick="refill()">REFILL STOCK ($50)</button>
 </div>
 
 <script>
-    let cash = 200, lvl = 1, stock = 0, xp = 0, active = false;
-    let type = "";
-    const items = ["🍎", "🥛", "🍞", "🍪", "🍕"];
+    let cash = 200, lvl = 1, stock = 0, xp = 0, busy = false;
+    let custType = "";
+    const items = ["🍎", "🥛", "🍞", "🍪", "🍕", "🧀"];
 
-    // Music Start on First Tap
-    document.addEventListener('click', function() {
-        const music = document.getElementById('bgMusic');
-        if(music.paused) { music.volume = 0.3; music.play(); }
-    }, { once: true });
+    document.addEventListener('click', () => {
+        const m = document.getElementById('bgMusic');
+        if(m.paused) { m.volume = 0.2; m.play(); }
+    }, {once: true});
 
     function update() {
         document.getElementById('cash').innerText = `$${cash}`;
@@ -99,40 +108,50 @@
         document.getElementById('stk').innerText = `${stock}/100`;
         document.getElementById('xp').innerText = `${xp}%`;
         
-        // Stacked Items Logic: Fill shelves one by one
+        // Accurate Stacking Logic: Fills shelves sequentially
         for(let s=1; s<=4; s++) {
-            const stackDiv = document.getElementById(`stack-${s}`);
-            stackDiv.innerHTML = "";
+            const div = document.getElementById(`stack-${s}`);
+            div.innerHTML = "";
             let start = (s-1) * 25;
             let end = Math.min(stock, s * 25);
             for(let i=start; i<end; i++) {
-                stackDiv.innerHTML += `<span>${items[i % items.length]}</span>`;
+                div.innerHTML += `<span>${items[i % items.length]}</span>`;
             }
         }
     }
 
     function refill() {
-        if(cash >= 50) { cash -= 50; stock = Math.min(stock + 40, 100); update(); }
+        if(cash >= 50) { cash -= 50; stock = Math.min(stock + 30, 100); update(); }
+    }
+
+    function hireStaff(role) {
+        if(role === 'cleaner' && cash >= 150) {
+            cash -= 150;
+            const cl = document.getElementById('cleaner');
+            cl.style.display = 'block';
+            cl.style.left = "80%";
+            update();
+            alert("Cleaner Hired!");
+        }
     }
 
     function spawn() {
-        if(active) return;
-        active = true;
+        if(busy) return; busy = true;
         const c = document.getElementById('customer');
         const pool = ["man", "old_lady", "police"];
-        type = pool[Math.floor(Math.random() * pool.length)];
-        c.src = `${type}_walk.png`;
+        custType = pool[Math.floor(Math.random() * pool.length)];
+        c.src = `${custType}_walk.png`;
         c.style.left = "42%";
 
         setTimeout(() => {
-            c.src = `${type}_idle.png`;
+            c.src = `${custType}_idle.png`;
             if(stock > 0) document.getElementById('btn-collect').style.display = 'block';
             else setTimeout(leave, 1000);
         }, 1500);
     }
 
-    function handleSale() {
-        cash += (type === "police") ? 100 : 60;
+    function doSale() {
+        cash += (custType === "police") ? 100 : 60;
         stock--; xp += 20;
         document.getElementById('btn-collect').style.display = 'none';
         if(xp >= 100) { xp = 0; lvl++; }
@@ -141,11 +160,11 @@
 
     function leave() {
         const c = document.getElementById('customer');
-        c.src = `${type}_walk.png`;
+        c.src = `${custType}_walk.png`;
         c.style.left = "110%";
         setTimeout(() => {
             c.style.transition = "none"; c.style.left = "-200px";
-            setTimeout(() => { c.style.transition = "left 1.5s linear"; active = false; }, 100);
+            setTimeout(() => { c.style.transition = "left 1.5s linear"; busy = false; }, 100);
         }, 1500);
     }
 
