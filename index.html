@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - GitHub Version</title>
+    <title>Shop Simulator - Final Working Version</title>
     <style>
         body {
             margin: 0;
@@ -14,14 +14,12 @@
             height: 100vh;
             background: #1a1a1a;
             font-family: 'Courier New', monospace;
-            color: #fff;
         }
 
-        /* Full Screen Shop Container */
         #game-container {
             width: 100vw;
             height: 100vh;
-            background: #333; /* Shop Wall */
+            background: #2c3e50; /* Shop Wall */
             position: relative;
             display: flex;
             flex-direction: column;
@@ -34,86 +32,115 @@
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 30%;
+            height: 35%;
             background: #5d4037;
             border-top: 10px solid #4a332a;
+            z-index: 1;
         }
 
-        /* Wooden Counter */
+        /* Counter */
         .counter {
             position: absolute;
-            bottom: 25%;
-            width: 50%;
-            height: 120px;
+            bottom: 28%;
+            width: 450px;
+            height: 140px;
             background: #8b4513;
-            border: 5px solid #5d4037;
+            border: 6px solid #5d4037;
             z-index: 10;
         }
 
-        /* PLAYER: Using player.png from your GitHub */
+        /* PLAYER: Bada size aur counter ke peeche */
         #player-sprite {
             position: absolute;
-            bottom: 35%; /* Positioned behind the counter */
-            width: 150px;
+            bottom: 38%; 
+            width: 220px; /* Size bada kar diya */
             z-index: 5;
             image-rendering: pixelated;
         }
 
-        /* CUSTOMER: Lady Character */
+        /* CUSTOMER */
         #customer-sprite {
             position: absolute;
             bottom: 15%;
-            left: -200px;
-            width: 180px;
+            left: -300px;
+            width: 200px;
             z-index: 20;
             transition: left 1.5s linear;
             image-rendering: pixelated;
         }
 
-        /* UI Panel (Skin Color Style) */
+        /* UI Panel: Skin Color */
         #ui-panel {
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 150px;
-            background: #e1b382; /* Skin Color */
+            height: 160px;
+            background: #e1b382; 
             border-top: 8px solid #5d4037;
             display: flex;
-            justify-content: space-around;
+            justify-content: center;
             align-items: center;
+            gap: 40px;
             z-index: 100;
+        }
+
+        .stat-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .stat-box {
             background: #5d4037;
-            color: white;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 24px;
+            color: #f1c40f;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 22px;
             font-weight: bold;
-            border: 4px solid #f3c592;
+            border: 3px solid #f3c592;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 20px;
         }
 
         .game-btn {
-            padding: 15px 30px;
+            padding: 20px 35px;
             font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
-            transition: 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 6px #a04500;
+            transition: 0.1s;
         }
 
-        #refill-btn { background: #d35400; box-shadow: 0 5px #a04500; }
+        #refill-btn { background: #d35400; }
+        #upgrade-btn { background: #27ae60; box-shadow: 0 6px #1e8449; }
+
         #bill-btn { 
-            position: absolute; top: -120px; left: 50%; 
+            position: absolute; 
+            top: -140px; 
+            left: 50%; 
             transform: translateX(-50%);
-            background: #f1c40f; color: black; display: none; 
+            background: #f1c40f; 
+            color: black; 
+            display: none; 
+            box-shadow: 0 6px #c2a10e;
+        }
+
+        .game-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
         }
 
         #start-overlay {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9);
+            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
             z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
     </style>
@@ -121,8 +148,8 @@
 <body>
 
 <div id="start-overlay">
-    <h1 style="color: #f1c40f;">🏪 SHOP SIMULATOR</h1>
-    <button class="game-btn" style="background: #27ae60;" onclick="startGame()">START GAME</button>
+    <h1 style="color: #f1c40f; font-size: 50px;">🏪 SHOP SIMULATOR</h1>
+    <button class="game-btn" style="background: #27ae60; box-shadow: 0 6px #1e8449;" onclick="startGame()">OPEN SHOP</button>
 </div>
 
 <div id="game-container">
@@ -134,12 +161,18 @@
     
     <img src="lady_customer.png" id="customer-sprite">
     
-    <button id="bill-btn" class="game-btn" onclick="processBill()">GENERATE BILL 🧾</button>
-
     <div id="ui-panel">
-        <div class="stat-box">💰 $<span id="cash">0</span></div>
-        <div class="stat-box">📦 STOCK: <span id="stock">0</span>/5</div>
-        <button id="refill-btn" class="game-btn" onclick="refill()">REFILL SHOP</button>
+        <button id="bill-btn" class="game-btn" onclick="processBill()">BILL PLEASE! 🧾</button>
+        
+        <div class="stat-group">
+            <div class="stat-box">CASH: $<span id="cash">0</span></div>
+            <div class="stat-box">STOCK: <span id="stock">0</span>/5</div>
+        </div>
+
+        <div class="btn-group">
+            <button id="refill-btn" class="game-btn" onclick="refill()">Refill Shop</button>
+            <button id="upgrade-btn" class="game-btn" onclick="upgrade()">Upgrade ($200)</button>
+        </div>
     </div>
 </div>
 
@@ -148,6 +181,7 @@
 
     function startGame() {
         document.getElementById('start-overlay').style.display = 'none';
+        // Customer flow loop
         setInterval(() => {
             if (!isWaiting && stock > 0) spawnCustomer();
         }, 4000);
@@ -156,7 +190,7 @@
     function spawnCustomer() {
         isWaiting = true;
         const cust = document.getElementById('customer-sprite');
-        cust.style.left = "40%"; 
+        cust.style.left = "38%"; 
         setTimeout(() => {
             document.getElementById('bill-btn').style.display = "block";
         }, 1500);
@@ -168,12 +202,11 @@
         updateUI();
         document.getElementById('bill-btn').style.display = "none";
         
-        // Customer leaves
         const cust = document.getElementById('customer-sprite');
         cust.style.left = "110%";
         setTimeout(() => {
             cust.style.transition = "none";
-            cust.style.left = "-200px";
+            cust.style.left = "-300px";
             setTimeout(() => {
                 cust.style.transition = "left 1.5s linear";
                 isWaiting = false;
@@ -182,10 +215,23 @@
     }
 
     function refill() {
+        // Initial refill free, then $50
         if (cash >= 50 || stock === 0) {
             if (cash >= 50) cash -= 50;
             stock = 5;
             updateUI();
+        } else {
+            alert("Not enough cash!");
+        }
+    }
+
+    function upgrade() {
+        if (cash >= 200) {
+            cash -= 200;
+            updateUI();
+            alert("Shop Upgraded!");
+        } else {
+            alert("Need $200 for upgrade!");
         }
     }
 
