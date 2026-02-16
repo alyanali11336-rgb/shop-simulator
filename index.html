@@ -3,80 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Shop Team Sim</title>
+    <title>Shop Sim - Gravity Fix</title>
     <style>
         :root { --ui-bg: #e1b382; --stat-bg: #3e2723; --gold: #f1c40f; }
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #000; overflow: hidden; }
 
         /* Game Stage Area */
         #game-view {
             flex: 1; position: relative; background: #2c3e50;
             display: flex; flex-direction: column; justify-content: flex-end;
-            background-image: linear-gradient(#2c3e50 70%, #5d4037 70%); /* Dynamic Floor/Wall */
+            background-image: linear-gradient(#2c3e50 65%, #5d4037 65%); /* Floor line adjusted */
         }
 
-        /* Fixed Assets from GitHub Structure */
-        #shelf-img { position: absolute; top: 15%; left: 10%; width: 140px; z-index: 5; }
-        #counter-img { position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%); width: 180px; z-index: 15; }
+        /* Gravity Fix: Counter now sits on the floor line */
+        #counter-img { 
+            position: absolute; 
+            bottom: 27%; /* Niche kar diya gaya hai floor ke paas */
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 200px; 
+            z-index: 15; 
+        }
 
-        /* Character Assets */
-        #player { position: absolute; bottom: 32%; left: 50%; transform: translateX(-50%); width: 110px; z-index: 10; }
-        #customer { position: absolute; bottom: 10%; left: -150px; width: 130px; z-index: 20; transition: left 1.5s linear; }
-        #cleaner { position: absolute; bottom: 8%; width: 90px; z-index: 18; transition: left 1.2s linear; display: none; }
+        #shelf-img { position: absolute; top: 20%; left: 8%; width: 160px; z-index: 5; }
 
-        /* Stock Overlay on Shelf (Emojis) */
-        #stock-display { position: absolute; top: 18%; left: 12%; width: 120px; text-align: center; font-size: 20px; z-index: 6; }
-
-        /* Mobile Responsive UI */
+        /* Characters Position */
+        #player { position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%); width: 110px; z-index: 10; }
+        #customer { position: absolute; bottom: 8%; left: -150px; width: 130px; z-index: 20; transition: left 1.5s linear; }
+        
+        /* UI Panel */
         #ui-grid {
-            height: 38vh; background: var(--ui-bg); display: grid;
+            height: 35vh; background: var(--ui-bg); display: grid;
             grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px;
             box-sizing: border-box; border-top: 5px solid #3e2723;
         }
 
-        .stat-box { background: var(--stat-bg); color: var(--gold); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid var(--gold); font-weight: bold; }
-        .btn-action { background: #27ae60; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 0 #1e8449; cursor: pointer; }
+        .stat-box { background: var(--stat-bg); color: var(--gold); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px solid var(--gold); font-size: 0.9rem; }
+        .btn-action { background: #27ae60; color: white; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; box-shadow: 0 4px 0 #1e8449; cursor: pointer; }
         .btn-action:active { transform: translateY(3px); box-shadow: 0 1px 0 #1e8449; }
 
         #pay-notif { 
-            position: absolute; top: 35%; left: 50%; transform: translateX(-50%);
-            background: #f39c12; color: white; padding: 10px 20px; border-radius: 30px;
-            font-weight: bold; display: none; z-index: 100; animation: float 1s infinite alternate;
+            position: absolute; top: 40%; left: 50%; transform: translateX(-50%);
+            background: #f39c12; color: white; padding: 12px 25px; border-radius: 30px;
+            font-weight: bold; display: none; z-index: 100;
         }
-        @keyframes float { from { margin-top: 0; } to { margin-top: -10px; } }
     </style>
 </head>
 <body>
 
 <div id="game-view">
-    <img src="shelf.png" id="shelf-img"> 
-    <div id="stock-display"></div>
-    
-    <img src="player.png" id="player"> <img src="counter.png" id="counter-img"> 
-    
-    <img src="man_idle.png" id="customer"> <img src="cleaner_idle.png" id="cleaner">
-
-    <div id="pay-notif" onclick="completeSale()">TAP TO BILL 💰</div>
+    <img src="shelf.png" id="shelf-img"> <img src="player.png" id="player"> <img src="counter.png" id="counter-img"> <img src="man_idle.png" id="customer"> <div id="pay-notif" onclick="completeSale()">COLLECT MONEY 💰</div>
 </div>
 
 <div id="ui-grid">
     <div class="stat-box">CASH: <span id="cash-txt">$200</span></div>
     <div class="stat-box">LVL: <span id="lvl-txt">1</span></div>
-    <div class="stat-box">STOCK: <span id="stk-txt">0/15</span></div>
-    <div class="stat-box">XP: <span id="xp-txt">0%</span></div>
+    <div class="stat-box">STOCK: <span id="stk-txt">0/50</span></div> <div class="stat-box">XP: <span id="xp-txt">0%</span></div>
     
-    <button class="btn-action" onclick="refill()">REFILL STOCK ($25)</button>
-    <button class="btn-action" style="background:#2980b9; box-shadow:0 4px 0 #1a5276;" onclick="buyStaff()">HIRE CLEANER ($150)</button>
+    <button class="btn-action" onclick="refill()">REFILL STOCK ($50)</button>
+    <button class="btn-action" style="background:#2980b9; box-shadow:0 4px 0 #1a5276;">UPGRADE SHOP</button>
 </div>
 
 <script>
     let cash = 200, stock = 0, level = 1, xp = 0, isBusy = false;
-    let currentType = "";
+    const maxStock = 50; // New higher capacity
 
     function refill() {
-        if (cash >= 25) {
-            cash -= 25; stock = Math.min(stock + 5, 15);
-            updateVisuals();
+        if (cash >= 50) {
+            cash -= 50; 
+            stock = Math.min(stock + 20, maxStock);
+            updateUI();
         }
     }
 
@@ -84,33 +80,28 @@
         if (isBusy) return;
         isBusy = true;
         const c = document.getElementById('customer');
-        // Team logic using your files
-        const team = ["man", "old_lady", "police"]; 
-        currentType = team[Math.floor(Math.random() * team.length)];
-
+        const types = ["man", "old_lady", "police"];
+        let currentType = types[Math.floor(Math.random() * types.length)];
+        
         c.src = `${currentType}_walk.png`;
         c.style.left = "40%";
 
         setTimeout(() => {
             c.src = `${currentType}_idle.png`;
             if (stock > 0) document.getElementById('pay-notif').style.display = 'block';
-            else setTimeout(exit, 1500);
+            else setTimeout(() => exit(currentType), 1500);
         }, 1500);
     }
 
     function completeSale() {
-        let pay = (currentType === "police") ? 120 : 60; // Police bonus
-        cash += pay; stock--; xp += 20;
+        cash += 60; stock--; xp += 15;
         document.getElementById('pay-notif').style.display = 'none';
-        
-        if (xp >= 100) { xp = 0; level++; alert("Level Up! Shop Growing!"); }
-        updateVisuals();
+        updateUI();
         exit();
     }
 
-    function exit() {
+    function exit(type) {
         const c = document.getElementById('customer');
-        c.src = `${currentType}_walk.png`;
         c.style.left = "110%";
         setTimeout(() => {
             c.style.transition = "none"; c.style.left = "-150px";
@@ -118,25 +109,14 @@
         }, 1500);
     }
 
-    function buyStaff() {
-        if (cash >= 150) {
-            cash -= 150;
-            document.getElementById('cleaner').style.display = 'block';
-            updateVisuals();
-        }
-    }
-
-    function updateVisuals() {
+    function updateUI() {
         document.getElementById('cash-txt').innerText = `$${cash}`;
+        document.getElementById('stk-txt').innerText = `${stock}/${maxStock}`;
         document.getElementById('lvl-txt').innerText = level;
-        document.getElementById('stk-txt').innerText = `${stock}/15`;
         document.getElementById('xp-txt').innerText = `${xp}%`;
-        
-        // Stock emoji display
-        document.getElementById('stock-display').innerText = "🍎".repeat(stock > 5 ? 3 : stock);
     }
 
-    setInterval(spawnCustomer, 6000);
+    setInterval(spawnCustomer, 5000);
 </script>
 </body>
 </html>
