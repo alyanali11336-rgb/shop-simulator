@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shop Sim - Lady Customer Version</title>
+    <style>
+        /* CSS Same Rahega */
+        body { 
+            background: #222; margin: 0; display: flex; 
+            justify-content: center; align-items: center; 
+            height: 100vh; overflow: hidden;
+            font-family: 'Courier New', monospace; 
+        }
+        
+        #game-container {
+            position: relative; width: 800px; height: 800px;
+            background: url('background.png') no-repeat center;
+            background-size: contain; image-rendering: pixelated;
+        }
+
+        .sprite { position: absolute; image-rendering: pixelated; }
+
+        /* CUSTOMER: Linked to lady_customer.png */
+        #customer { 
+            width: 280px; bottom: 180px; left: -350px; 
+            z-index: 20; transition: left 1.5s linear; 
+        }
+
+        #speech {
+            position: absolute; background: white; padding: 10px; 
+            border-radius: 10px; border: 3px solid #000; 
+            font-weight: bold; display: none; z-index: 30;
+            bottom: 450px; left: 300px;
+        }
+
+        .ui-btn { position: absolute; cursor: pointer; }
+        #refill-hitbox { width: 220px; height: 60px; bottom: 80px; right: 40px; }
+        #upgrade-hitbox { width: 220px; height: 60px; bottom: 80px; right: 280px; }
+        #bill-hitbox { width: 300px; height: 100px; bottom: 250px; left: 250px; display: none; }
+
+        .stat-text { position: absolute; color: white; font-size: 24px; font-weight: bold; }
+        #cash-val { bottom: 135px; left: 110px; }
+        #stock-val { bottom: 135px; left: 300px; }
+
+        #start-screen {
+            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; color: white;
+        }
+        #start-btn { padding: 20px 40px; font-size: 24px; cursor: pointer; background: #27ae60; color: white; border: none; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="start-screen">
+        <h1>Pixel Shop Sim</h1>
+        <button id="start-btn" onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="speech"></div>
+    <div id="cash-val" class="stat-text">0</div>
+    <div id="stock-val" class="stat-text">0</div>
+
+    <img src="lady_customer.png" id="customer" class="sprite">
+
+    <div id="refill-hitbox" class="ui-btn" onclick="refill()"></div>
+    <div id="upgrade-hitbox" class="ui-btn" onclick="upgrade()"></div>
+    <div id="bill-hitbox" class="ui-btn" onclick="generateBill()"></div>
+</div>
+
+<audio id="bgMusic" src="music.mp3" loop></audio>
+<audio id="coinSound" src="coin.mp3"></audio>
+
+<script>
+    let cash = 0;
+    let stock = 0; 
+    let isCustomerWaiting = false;
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('bgMusic').volume = 0.3;
+        document.getElementById('bgMusic').play();
+        
+        setInterval(() => {
+            if (!isCustomerWaiting && stock > 0) spawnCustomer();
+        }, 5000);
+    }
+
+    function spawnCustomer() {
+        isCustomerWaiting = true;
+        const cust = document.getElementById('customer');
+        const speech = document.getElementById('speech');
+        const billBtn = document.getElementById('bill-hitbox');
+
+        // Customer screen ke andar aayegi
+        cust.style.left = "260px"; 
+
+        setTimeout(() => {
+            speech.innerText = "BILL PLEASE!";
+            speech.style.display = "block";
+            billBtn.style.display = "block";
+        }, 1500);
+    }
+
+    function generateBill() {
+        document.getElementById('coinSound').currentTime = 0; 
+        document.getElementById('coinSound').play();
+
+        cash += 25;
+        stock--;
+        updateUI();
+        leave();
+    }
+
+    function leave() {
+        const cust = document.getElementById('customer');
+        const speech = document.getElementById('speech');
+        const billBtn = document.getElementById('bill-hitbox');
+
+        speech.innerText = "THANKS!";
+        billBtn.style.display = "none";
+
+        setTimeout(() => {
+            speech.style.display = "none";
+            cust.style.left = "900px"; // Exit right
+            
+            setTimeout(() => {
+                cust.style.transition = "none";
+                cust.style.left = "-350px"; // Reset to left
+                setTimeout(() => {
+                    cust.style.transition = "left 1.5s linear";
+                    isCustomerWaiting = false;
+                }, 50);
+            }, 1500);
+        }, 1000);
+    }
+
+    function refill() {
+        if (cash >= 50 || stock === 0) {
+            if (cash >= 50) cash -= 50;
+            stock = 5;
+            updateUI();
+            document.getElementById('game-container').style.backgroundImage = "url('background_full.png')";
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('cash-val').innerText = cash;
+        document.getElementById('stock-val').innerText = stock;
+        
+        if (stock <= 0) {
+            document.getElementById('game-container').style.backgroundImage = "url('background.png')";
+        }
+    }
+
+    function upgrade() {
+        if (cash >= 200) {
+            cash -= 200;
+            updateUI();
+            alert("Shop Upgraded!");
+        }
+    }
+</script>
+</body>
+</html>
