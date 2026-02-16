@@ -2,125 +2,135 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shop Simulator</title>
+    <title>Shop Simulator - Refill System</title>
     <style>
-        body {
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #111;
-            overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
-        }
-
-        #game-container {
+        body { background: #111; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; font-family: 'Courier New', monospace; }
+        
+        #game-window {
             position: relative;
             width: 800px;
             height: 800px;
-            background-image: url('background.png'); /* Back Layer */
-            background-size: contain;
-            background-repeat: no-repeat;
+            background-image: url('background.png'); /* */
+            background-size: cover;
+            border: 4px solid #333;
         }
 
-        .layer {
-            position: absolute;
-            image-rendering: pixelated;
+        .sprite { position: absolute; image-rendering: pixelated; }
+
+        /* Shelves */
+        .shelf { width: 140px; top: 120px; z-index: 1; }
+        #s1 { left: 80px; } #s2 { left: 330px; } #s3 { left: 580px; }
+
+        /* Characters & Counter Location Fix */
+        #player { width: 170px; bottom: 385px; left: 315px; z-index: 5; }
+        #counter { width: 480px; bottom: 230px; left: 160px; z-index: 10; }
+        #customer { width: 150px; bottom: 80px; left: -200px; z-index: 15; transition: all 1s ease-in-out; }
+
+        #ui { 
+            position: absolute; bottom: 0; width: 100%; height: 100px;
+            background: rgba(0,0,0,0.9); color: #2ecc71; 
+            display: flex; justify-content: space-around; align-items: center;
+            z-index: 100;
         }
 
-        /* Fixed Player: Standing behind the counter */
-        #player {
-            width: 160px;
-            bottom: 400px; 
-            left: 320px;
-            z-index: 2; /* Behind the counter */
-        }
-
-        /* Fixed Counter: Placed in front of the player */
-        #counter {
-            width: 480px;
-            bottom: 240px;
-            left: 160px;
-            z-index: 3; /* In front of player */
-        }
-
-        /* Fixed Customer: Standing in front of the counter */
-        #customer {
-            width: 140px;
-            bottom: 120px;
-            left: -200px; /* Starts off-screen */
-            transition: all 1s ease-in-out;
-            z-index: 4; /* Closest to the camera */
-        }
-
-        #ui {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 0;
-            z-index: 10;
-        }
-
-        button {
-            padding: 10px 20px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
+        .btn-group { display: flex; flex-direction: column; gap: 5px; }
+        
+        button { padding: 10px 20px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; color: white; }
+        #serveBtn { background: #27ae60; }
+        #refillBtn { background: #e67e22; display: none; } /* Hidden until needed */
+        button:disabled { background: #555; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <img src="player (2).png" id="player" class="layer">
-        <img src="counter.png" id="counter" class="layer">
-        <img src="customer.png" id="customer" class="layer">
+<div id="game-window">
+    <img src="shelf_full.png" id="s1" class="sprite shelf">
+    <img src="shelf_full.png" id="s2" class="sprite shelf">
+    <img src="shelf_full.png" id="s3" class="sprite shelf">
 
-        <div id="ui">
-            <div>CASH: $<span id="money">0</span></div>
-            <div id="msg">Shop is Open!</div>
-            <button onclick="serve()">Serve Customer</button>
+    <img src="player (2).png" id="player" class="sprite">
+    <img src="counter.png" id="counter" class="sprite">
+    <img src="customer.png" id="customer" class="sprite">
+
+    <div id="ui">
+        <div>💰 CASH: $<span id="bal">0</span></div>
+        <div id="status">Serving: <span id="count">0</span>/5</div>
+        
+        <div class="btn-group">
+            <button id="serveBtn" onclick="serveCustomer()">SERVE CUSTOMER</button>
+            <button id="refillBtn" onclick="refillShelves()">REFILL SHELVES (-$50)</button>
         </div>
     </div>
+</div>
 
-    <script>
-        let cash = 0;
-        function serve() {
-            const c = document.getElementById('customer');
-            const m = document.getElementById('msg');
+<script>
+    let totalCash = 0;
+    let itemsSold = 0;
+
+    function serveCustomer() {
+        if (itemsSold >= 5) return;
+
+        const customer = document.getElementById('customer');
+        const serveBtn = document.getElementById('serveBtn');
+        const refillBtn = document.getElementById('refillBtn');
+
+        serveBtn.disabled = true;
+        customer.style.left = "325px"; // Location fix
+        customer.style.bottom = "180px"; 
+
+        setTimeout(() => {
+            // Money calculation
+            totalCash += 20; 
+            itemsSold++;
             
-            // Customer walks to counter
-            c.style.left = "330px";
-            m.innerText = "Customer is buying...";
+            document.getElementById('bal').innerText = totalCash;
+            document.getElementById('count').innerText = itemsSold;
+            
+            // Shelf empty logic
+            if (itemsSold >= 5) {
+                updateShelves('shelf_empty.png');
+                serveBtn.style.display = "none";
+                refillBtn.style.display = "block";
+                if (totalCash < 50) refillBtn.disabled = true;
+            }
 
+            // Customer leaves
             setTimeout(() => {
-                cash += 10;
-                document.getElementById('money').innerText = cash;
-                m.innerText = "Sale Complete! +$10";
-
-                // Customer leaves
+                customer.style.left = "1000px";
                 setTimeout(() => {
-                    c.style.left = "900px";
-                    m.innerText = "Waiting...";
-                    
-                    // Reset customer
-                    setTimeout(() => {
-                        c.style.transition = "none";
-                        c.style.left = "-200px";
-                        setTimeout(() => { c.style.transition = "all 1s ease-in-out"; }, 50);
-                    }, 1000);
+                    customer.style.transition = "none";
+                    customer.style.left = "-200px";
+                    customer.style.bottom = "80px";
+                    setTimeout(() => { 
+                        customer.style.transition = "all 1s ease-in-out"; 
+                        if (itemsSold < 5) serveBtn.disabled = false;
+                    }, 50);
                 }, 1000);
-            }, 1000);
+            }, 800);
+        }, 1000);
+    }
+
+    function refillShelves() {
+        if (totalCash >= 50) {
+            totalCash -= 50;
+            itemsSold = 0;
+            
+            document.getElementById('bal').innerText = totalCash;
+            document.getElementById('count').innerText = itemsSold;
+            updateShelves('shelf_full.png');
+            
+            document.getElementById('serveBtn').style.display = "block";
+            document.getElementById('serveBtn').disabled = false;
+            document.getElementById('refillBtn').style.display = "none";
         }
-    </script>
+    }
+
+    function updateShelves(imgName) {
+        document.getElementById('s1').src = imgName;
+        document.getElementById('s2').src = imgName;
+        document.getElementById('s3').src = imgName;
+    }
+</script>
+
 </body>
 </html>
