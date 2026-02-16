@@ -3,208 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Megastore - Chaos Edition</title>
+    <title>Elite Shop Sim Pro</title>
     <style>
-        :root { --glass: rgba(0, 0, 0, 0.6); --gold: #f1c40f; --neon: #00f2ff; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #000; color: white; overflow: hidden; }
+        :root { --glass: rgba(0,0,0,0.7); --neon: #00f2ff; --gold: #f1c40f; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; overflow: hidden; }
 
-        /* Neon Glass HUD */
+        /* HUD Glass UI */
         #hud {
-            position: absolute; top: 15px; width: 95%; left: 2.5%; display: flex; 
-            justify-content: space-around; padding: 12px;
-            background: var(--glass); backdrop-filter: blur(20px); border-radius: 15px;
-            border: 1px solid rgba(0,242,255,0.3); z-index: 1000; box-shadow: 0 0 15px rgba(0,242,255,0.2);
+            position: absolute; top: 0; width: 100%; display: flex; justify-content: space-around;
+            padding: 15px 0; background: var(--glass); backdrop-filter: blur(10px); z-index: 1000;
         }
-        .stat { text-align: center; }
-        .stat b { display: block; font-size: 0.7rem; color: var(--neon); text-transform: uppercase; }
+        .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--gold); }
 
-        #stage {
-            position: relative; height: 100vh; width: 100%;
-            background: linear-gradient(to bottom, #1e3c72, #2a5298, #4e342e 50%);
-            transition: 2s;
-        }
+        #stage { position: relative; height: 100vh; width: 100%; background: linear-gradient(to bottom, #2c3e50, #000); }
 
-        /* Rain Animation */
-        #rain { position: absolute; width: 100%; height: 50%; pointer-events: none; z-index: 100; display: none; }
-        .drop { position: absolute; background: rgba(255,255,255,0.3); width: 2px; height: 15px; top: -20px; animation: fall linear infinite; }
-        @keyframes fall { to { transform: translateY(500px); } }
+        /* Shelves */
+        .shelf { position: absolute; width: 150px; height: 110px; background: url('shelf.png') no-repeat bottom/contain; z-index: 50; }
+        #s1 { top:20%; left:8%; } #s2 { top:20%; right:8%; }
+        #s3 { top:45%; left:8%; } #s4 { top:45%; right:8%; }
+        .item-grid { display: grid; grid-template-columns: repeat(3, 1fr); position: absolute; bottom: 25px; width: 100%; text-align: center; }
 
-        /* Blinking Shelves for Low Stock */
-        @keyframes blink { 50% { box-shadow: 0 0 20px red; border: 2px solid red; } }
-        .shelf { position: absolute; width: 140px; height: 100px; background: url('shelf.png') no-repeat bottom/contain; z-index: 50; border-radius: 10px; }
-        .low-stock { animation: blink 0.5s infinite; }
-        
-        #s1 { top:20%; left:10%; } #s2 { top:20%; right:10%; }
-        #s3 { top:45%; left:10%; } #s4 { top:45%; right:10%; }
-
-        /* New Pets */
-        #duck { position: absolute; bottom: 35%; font-size: 2rem; z-index: 350; transition: left 12s linear; }
-        #dog { position: absolute; bottom: 28%; left: 5%; font-size: 2rem; z-index: 350; }
-
-        .actor { position: absolute; height: 140px; z-index: 400; transition: all 1s ease; }
+        /* Actors */
+        .actor { position: absolute; height: 145px; z-index: 400; transition: all 1s ease; }
         #player { bottom: 33%; left: 35%; transform: translateX(-50%); }
-        .counter { position: absolute; bottom: 25%; width: 170px; z-index: 500; }
+        #cleaner { bottom: 9%; left: 80%; display: none; transition: left 2s ease; }
 
-        /* Receipt Glass UI */
+        /* DOG (Code Generated) */
+        #dog-container { position: absolute; bottom: 30%; left: 5%; width: 60px; height: 40px; z-index: 350; }
+        .dog-body { background: #8d6e63; width: 40px; height: 25px; border-radius: 10px; position: absolute; bottom: 0; }
+        .dog-head { background: #8d6e63; width: 20px; height: 20px; border-radius: 50%; position: absolute; top: -10px; right: -5px; }
+        .dog-ear { background: #5d4037; width: 8px; height: 12px; border-radius: 40%; position: absolute; top: -5px; }
+
+        /* Stickman Thief */
+        .stickman { position: absolute; bottom: 8%; font-size: 3rem; z-index: 600; cursor: pointer; transition: left 3s linear; }
+
+        /* UI Elements */
         #receipt {
             position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(255,255,255,0.95); color: #222; padding: 25px; border-radius: 20px;
-            display: none; z-index: 2000; text-align: center; width: 220px;
-            border: 5px solid var(--neon);
+            background: white; color: black; padding: 20px; border-radius: 15px; display: none; z-index: 2000; text-align: center;
         }
 
-        #footer { position: absolute; bottom: 0; width: 100%; display: flex; padding: 15px; background: var(--glass); backdrop-filter: blur(10px); z-index: 1001; box-sizing: border-box; }
-        .btn { flex: 1; margin: 0 8px; padding: 15px; border: none; border-radius: 15px; font-weight: bold; color: white; cursor: pointer; }
-        .btn-green { background: #2ecc71; box-shadow: 0 4px #27ae60; }
-        .btn-blue { background: #3498db; box-shadow: 0 4px #2980b9; }
-
-        /* Chaos Text */
-        .chaos-msg { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); color: var(--gold); font-size: 2rem; font-weight: 900; z-index: 1100; display: none; text-shadow: 2px 2px #000; }
+        #footer { position: absolute; bottom: 0; width: 100%; display: flex; padding: 15px; background: var(--glass); z-index: 1001; box-sizing: border-box; }
+        .btn { flex: 1; margin: 0 5px; padding: 12px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; }
+        .btn-green { background: #27ae60; } .btn-blue { background: #2980b9; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div class="stat"><b>Capital</b><span id="c-val" class="stat-val">$300</span></div>
-    <div class="stat"><b>Stock</b><span id="s-val" class="stat-val">0/36</span></div>
-    <div class="stat"><b>Weather</b><span id="w-val" class="stat-val">Clear</span></div>
-    <div class="stat"><b>Level</b><span id="l-val" class="stat-val">1</span></div>
+    <div>CASH: <span id="c-val" class="stat-val">$300</span></div>
+    <div>STOCK: <span id="s-val" class="stat-val">0/36</span></div>
+    <div>LVL: <span id="l-val" class="stat-val">1</span></div>
 </div>
 
 <div id="stage">
-    <div id="rain"></div>
-    <div id="chaos-box" class="chaos-msg">FLASH SALE!</div>
-    
-    <div id="duck">🦆</div>
-    <div id="dog">🐕</div>
+    <div id="dog-container">
+        <div class="dog-body"></div>
+        <div class="dog-head"><div class="dog-ear"></div></div>
+    </div>
 
-    <div id="s1" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig1"></div></div>
-    <div id="s2" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig2"></div></div>
-    <div id="s3" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig3"></div></div>
-    <div id="s4" class="shelf"><div style="display:grid;grid-template-columns:repeat(3,1fr);padding:5px;" id="ig4"></div></div>
+    <div id="s1" class="shelf"><div class="item-grid" id="ig1"></div></div>
+    <div id="s2" class="shelf"><div class="item-grid" id="ig2"></div></div>
+    <div id="s3" class="shelf"><div class="item-grid" id="ig3"></div></div>
+    <div id="s4" class="shelf"><div class="item-grid" id="ig4"></div></div>
 
     <img src="player.png" id="player" class="actor">
-    <img src="counter.png" class="counter" style="left:35%;">
+    <img src="cleaner_idle.png" id="cleaner" class="actor">
+    <img src="counter.png" class="counter" style="position:absolute; bottom:25%; left:35%; width:170px; z-index:500;">
 
     <div id="cust-layer"></div>
+    <div id="garbage-layer"></div>
 
     <div id="receipt">
-        <h2 style="margin:0">BILLING</h2>
-        <p id="rec-info" style="font-size:1.2rem">Item: 🍎</p>
-        <hr>
-        <h1 id="rec-total">$60</h1>
-        <button onclick="finishBilling()" class="btn btn-green" style="width:100%">CASH OUT</button>
+        <h3>BILLING</h3>
+        <p id="rec-info"></p>
+        <h2 id="rec-total"></h2>
+        <button onclick="finishBilling()" class="btn btn-green" style="width:100%">COLLECT CASH</button>
     </div>
 </div>
 
 <div id="footer">
-    <button class="btn btn-green" onclick="refill()">Order Supplies ($50)</button>
-    <button class="btn btn-blue" onclick="toggleRain()">Weather Machine</button>
+    <button class="btn btn-green" onclick="refill()">Order Stock ($50)</button>
+    <button id="hire-btn" class="btn btn-blue" onclick="hireCleaner()">Hire Cleaner ($150)</button>
 </div>
 
 <script>
-    let cash = 300, stock = 0, lvl = 1, isRaining = false;
-    const items = ["🍎", "🥛", "🍞", "🍕", "🍪", "🍩"];
+    let cash = 300, stock = 0, lvl = 1, xp = 0, hasCleaner = false;
+    const items = ["🍎", "🥛", "🍞", "🍪", "🍕"];
     let activeCust = null;
 
     function update() {
         document.getElementById('c-val').innerText = `$${cash}`;
         document.getElementById('s-val').innerText = `${stock}/36`;
         document.getElementById('l-val').innerText = lvl;
-        
-        // Stock Low Warning
         for(let i=1; i<=4; i++) {
-            const sh = document.getElementById('s'+i);
-            if(stock < 5) sh.classList.add('low-stock');
-            else sh.classList.remove('low-stock');
-            
             const g = document.getElementById(`ig${i}`); g.innerHTML = "";
             let start = (i-1)*9; let end = Math.min(stock, i*9);
-            for(let j=start; j<end; j++) g.innerHTML += `<span>${items[j%6]}</span>`;
+            for(let j=start; j<end; j++) g.innerHTML += `<span>${items[j%5]}</span>`;
         }
-    }
-
-    // Weather System ⛈️
-    function toggleRain() {
-        isRaining = !isRaining;
-        const r = document.getElementById('rain');
-        const wVal = document.getElementById('w-val');
-        if(isRaining) {
-            r.style.display = 'block';
-            wVal.innerText = "Rainy (Tax+)";
-            wVal.style.color = "#00f2ff";
-            createRaindrops();
-        } else {
-            r.style.display = 'none';
-            wVal.innerText = "Clear";
-            wVal.style.color = "white";
-        }
-    }
-
-    function createRaindrops() {
-        const rain = document.getElementById('rain');
-        rain.innerHTML = "";
-        for(let i=0; i<30; i++) {
-            let drop = document.createElement('div');
-            drop.className = "drop";
-            drop.style.left = Math.random() * 100 + "%";
-            drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + "s";
-            rain.appendChild(drop);
-        }
-    }
-
-    // Animal AI 🦆🐕
-    function movePets() {
-        const d = document.getElementById('duck');
-        d.style.left = "-50px";
-        setTimeout(() => d.style.left = "110%", 100);
-        
-        const dog = document.getElementById('dog');
-        setInterval(() => {
-            dog.style.transform = `scaleX(${Math.random() > 0.5 ? 1 : -1})`;
-        }, 3000);
     }
 
     function refill() { if(cash >= 50 && stock < 36) { cash -= 50; stock += 12; update(); } }
+
+    function hireCleaner() {
+        if(cash >= 150) {
+            cash -= 150; hasCleaner = true;
+            document.getElementById('cleaner').style.display = "block";
+            document.getElementById('hire-btn').style.display = "none";
+            update();
+        }
+    }
+
+    function spawnGarbage(x) {
+        const g = document.createElement('div');
+        g.style.cssText = `position:absolute; bottom:10%; left:${x}; font-size:1.5rem; z-index:550;`;
+        g.innerText = "🗑️";
+        document.getElementById('garbage-layer').appendChild(g);
+        
+        if(hasCleaner) {
+            const cl = document.getElementById('cleaner');
+            cl.src = "cleaner_walk.png";
+            cl.style.left = x; // Move to garbage
+            setTimeout(() => {
+                g.remove(); cl.src = "cleaner_idle.png";
+                setTimeout(() => { cl.style.left = "80%"; }, 1000); // Move back
+            }, 2000);
+        } else {
+            g.onclick = () => { g.remove(); cash += 5; update(); };
+        }
+    }
 
     function spawn() {
         if(stock <= 0 || document.querySelectorAll('.cust-box').length > 3) return;
         const layer = document.getElementById('cust-layer');
         const box = document.createElement('div');
         box.className = "cust-box";
-        box.style.cssText = "position:absolute; bottom:8%; left:-100px; z-index:600; transition:all 1s;";
+        box.style.cssText = "position:absolute; bottom:8%; left:-100px; z-index:600; transition:all 1.2s;";
         const type = ["man", "old_lady", "police"][Math.floor(Math.random()*3)];
         box.innerHTML = `<img src="${type}_walk.png" style="height:130px;">`;
         layer.appendChild(box);
 
         setTimeout(() => {
-            box.style.left = (Math.random() > 0.5 ? "15%" : "80%"); // To Shelves
+            let shelfX = (Math.random() > 0.5 ? "15%" : "80%");
+            box.style.left = shelfX;
             setTimeout(() => {
-                const item = items[Math.floor(Math.random()*6)];
+                const item = items[Math.floor(Math.random()*5)];
                 stock--; update();
-                box.style.left = "35%"; // To Counter
+                box.style.left = "35%";
                 setTimeout(() => {
-                    activeCust = { el: box, type: type, item: item };
+                    activeCust = { el: box, type: type, item: item, x: "35%" };
                     document.getElementById('receipt').style.display = "block";
-                    document.getElementById('rec-info').innerText = "Bought: " + item;
-                    let price = isRaining ? 100 : 60;
-                    document.getElementById('rec-total').innerText = "$" + price;
-                }, 1000);
+                    document.getElementById('rec-info').innerText = "Item: " + item;
+                    document.getElementById('rec-total').innerText = "$" + (type === "police" ? 100 : 60);
+                }, 1200);
             }, 1000);
         }, 100);
     }
 
     function finishBilling() {
-        let price = isRaining ? 100 : 60;
-        cash += price;
+        cash += (activeCust.type === "police" ? 100 : 60);
         document.getElementById('receipt').style.display = "none";
+        if(Math.random() > 0.4) spawnGarbage(activeCust.x);
         activeCust.el.style.left = "110%";
-        setTimeout(() => activeCust.el.remove(), 1200);
+        setTimeout(() => activeCust.el.remove(), 1500);
         update();
     }
 
+    // Stickman Thief Character
+    function spawnThief() {
+        if(Math.random() > 0.5) return;
+        const s = document.createElement('div');
+        s.className = "stickman"; s.innerText = "🏃‍♂️"; s.style.left = "110%";
+        document.getElementById('stage').appendChild(s);
+        setTimeout(() => { s.style.left = "-100px"; }, 100);
+        s.onclick = () => { cash += 50; s.innerText = "😵"; setTimeout(() => s.remove(), 500); update(); };
+    }
+
     setInterval(spawn, 5000);
-    movePets();
+    setInterval(spawnThief, 10000);
     update();
 </script>
 </body>
