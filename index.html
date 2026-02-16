@@ -18,58 +18,61 @@
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* FIXED LOCATIONS BASED ON YOUR TILED FLOOR */
+        /* SHELF LOCATIONS (Aligned to back wall) */
         .shelf { width: 150px; top: 180px; z-index: 1; }
         #s1 { left: 100px; } 
         #s2 { left: 325px; } 
         #s3 { left: 550px; }
 
-        /* Player: Tucked behind the counter properly */
-        #player { width: 140px; bottom: 420px; left: 330px; z-index: 5; }
+        /* PLAYER: Placed precisely behind the desk */
+        #player { width: 140px; bottom: 410px; left: 330px; z-index: 5; }
 
-        /* Counter: Centered on the middle tiles */
-        #counter { width: 420px; bottom: 280px; left: 190px; z-index: 10; }
+        /* COUNTER: Centered on the tiles */
+        #counter { width: 440px; bottom: 270px; left: 180px; z-index: 10; }
 
-        /* Customer: Walking in the foreground aisle */
-        #customer { width: 160px; bottom: 100px; left: -250px; z-index: 20; transition: all 1s ease-in-out; }
+        /* CUSTOMER: Foreground aisle */
+        #customer { width: 160px; bottom: 80px; left: -250px; z-index: 20; transition: all 1s ease-in-out; }
 
-        /* NEW MONEY COUNTER HUD */
+        /* HUD: Top Center Money & Item Counter */
         #hud {
-            position: absolute; top: 20px; width: 100%;
+            position: absolute; top: 25px; width: 100%;
             display: flex; justify-content: center; z-index: 100;
         }
         .stats-box {
-            background: rgba(0,0,0,0.8); color: #00ff00; padding: 10px 30px;
-            border: 2px solid #00ff00; font-size: 24px; font-weight: bold; border-radius: 10px;
+            background: rgba(0, 0, 0, 0.85); color: #00ff00; padding: 12px 25px;
+            border: 3px solid #00ff00; font-size: 26px; font-weight: bold; border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
         }
 
-        /* UI BOTTOM BAR */
+        /* UI CONTROLS */
         #ui-controls {
-            position: absolute; bottom: 20px; width: 100%;
+            position: absolute; bottom: 30px; width: 100%;
             display: flex; justify-content: center; z-index: 100;
         }
         button { 
             padding: 15px 40px; font-size: 20px; cursor: pointer; border: none; 
-            font-weight: bold; border-radius: 8px; color: white; transition: 0.2s;
+            font-weight: bold; border-radius: 10px; color: white; transition: 0.2s;
         }
-        #serveBtn { background: #27ae60; box-shadow: 0 4px #1e8449; }
-        #refillBtn { background: #e67e22; box-shadow: 0 4px #a05817; display: none; }
+        #serveBtn { background: #27ae60; box-shadow: 0 5px #1e8449; }
+        #refillBtn { background: #e67e22; box-shadow: 0 5px #a05817; display: none; }
         button:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { background: #444; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
 
-        /* GAME OVER OVERLAY */
+        /* GAME OVER SCREEN */
         #game-over {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); color: red; display: none;
+            background: rgba(0,0,0,0.95); color: #ff0000; display: none;
             flex-direction: column; justify-content: center; align-items: center;
             z-index: 1000; text-align: center;
         }
+        #game-over h1 { font-size: 60px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div id="game-window">
     <div id="hud">
-        <div class="stats-box">💰 CASH: $<span id="bal">0</span> | 📦 ITEMS: <span id="count">0</span>/5</div>
+        <div class="stats-box">💰 $<span id="bal">0</span> | 📦 STOCK: <span id="count">0</span>/5</div>
     </div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
@@ -87,8 +90,8 @@
 
     <div id="game-over">
         <h1>GAME OVER</h1>
-        <p>You ran out of money to restock the shop!</p>
-        <button style="background:#555" onclick="location.reload()">TRY AGAIN</button>
+        <p style="font-size: 20px;">Bankrupt! You can't afford to restock.</p>
+        <button style="background:#444; margin-top: 20px;" onclick="location.reload()">RESTART SHOP</button>
     </div>
 </div>
 
@@ -102,7 +105,7 @@
         const refillBtn = document.getElementById('refillBtn');
 
         serveBtn.disabled = true;
-        customer.style.left = "320px"; // Walks to counter
+        customer.style.left = "320px"; // Customer walks to the front of the counter
 
         setTimeout(() => {
             totalCash += 20; 
@@ -116,15 +119,15 @@
                 serveBtn.style.display = "none";
                 refillBtn.style.display = "block";
                 
-                // Trigger Game Over if money is too low
+                // If money is less than refill cost, Game Over
                 if (totalCash < 50) {
-                    setTimeout(() => { document.getElementById('game-over').style.display = 'flex'; }, 1000);
+                    setTimeout(() => { document.getElementById('game-over').style.display = 'flex'; }, 1200);
                 }
             }
 
-            // Customer leaves
+            // Customer exits
             setTimeout(() => {
-                customer.style.left = "900px";
+                customer.style.left = "950px";
                 setTimeout(() => {
                     customer.style.transition = "none";
                     customer.style.left = "-250px";
