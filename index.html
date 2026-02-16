@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shop Sim - Auto Counter & Level 2 Rush</title>
+    <title>Shop Sim - Shelf Upgrade & Layer Fix</title>
     <style>
         :root { --ui: #3e2723; --gold: #f1c40f; }
         body { margin: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
@@ -12,25 +12,29 @@
         #stats { display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px; }
         .stat-item { color: var(--gold); text-align: center; font-size: 0.8rem; font-weight: bold; }
         
+        #upgrade-menu { display: flex; justify-content: center; gap: 10px; padding: 5px; background: rgba(0,0,0,0.3); }
+        .btn-up { background: #d35400; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+
         #game { flex: 1; position: relative; background: linear-gradient(#2c3e50 65%, #4a332d 65%); }
 
-        /* Shelves */
-        .shelf { position: absolute; width: 100px; height: 85px; z-index: 5; }
+        /* Flexible Shelves */
+        .shelf { position: absolute; width: 100px; transition: all 0.5s ease; z-index: 5; }
+        .shelf.large { width: 140px; height: 110px; } /* Size badhane ke liye */
+        
         #s1 { top: 15%; left: 5%; } #s2 { top: 15%; right: 5%; }
         #s3 { top: 38%; left: 5%; } #s4 { top: 38%; right: 5%; }
+        
         .items-grid { position: absolute; bottom: 15px; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); justify-items: center; }
 
-        /* Counters */
-        #counter-main { position: absolute; bottom: 26%; left: 35%; width: 150px; z-index: 15; }
-        #counter-auto { position: absolute; bottom: 26%; right: 15%; width: 130px; z-index: 15; display: none; filter: hue-rotate(90deg); opacity: 0.8; }
+        /* Character & Counter layering fix */
+        #counter-main { position: absolute; bottom: 25%; left: 35%; width: 160px; z-index: 20; } /* Counter z-index set */
+        #counter-auto { position: absolute; bottom: 25%; right: 15%; width: 130px; z-index: 20; display: none; filter: hue-rotate(90deg); }
 
-        .actor { position: absolute; height: 140px; transition: left 1s linear; z-index: 10; }
-        #player { bottom: 33%; left: 35%; transform: translateX(-50%); }
-        .customer { bottom: 10%; left: -200px; }
-        #cleaner { bottom: 10%; right: 10%; display: none; }
+        .actor { position: absolute; height: 140px; transition: left 1s linear; z-index: 30; } /* Actors always on top */
+        #player { bottom: 32%; left: 35%; transform: translateX(-50%); }
+        .customer { bottom: 9%; left: -200px; }
 
-        #btn-collect { position: absolute; top: 45%; left: 35%; transform: translate(-50%, -50%); background: #f39c12; color: white; padding: 12px 24px; border-radius: 50px; font-weight: bold; display: none; z-index: 200; border: 3px solid white; cursor: pointer; }
-        
+        #btn-collect { position: absolute; top: 40%; left: 35%; transform: translate(-50%, -50%); background: #f39c12; color: white; padding: 12px 24px; border-radius: 50px; font-weight: bold; display: none; z-index: 200; border: 3px solid white; cursor: pointer; }
         #footer { height: 10vh; background: #e1b382; display: flex; padding: 10px; border-top: 5px solid var(--ui); }
         .btn-main { flex: 1; border: none; border-radius: 10px; font-weight: bold; color: white; background: #27ae60; cursor: pointer; }
     </style>
@@ -46,6 +50,10 @@
         <div class="stat-item">STOCK<br><span id="s-val">0/36</span></div>
         <div class="stat-item">XP<br><span id="x-val">0%</span></div>
     </div>
+    <div id="upgrade-menu">
+        <button class="btn-up" onclick="upgradeShelves()">UPGRADE SHELVES ($100)</button>
+        <button class="btn-up" style="background:#2980b9;" onclick="buyCleaner()">CLEANER ($150)</button>
+    </div>
 </div>
 
 <div id="game">
@@ -56,9 +64,11 @@
 
     <img src="player.png" class="actor" id="player">
     <img src="counter.png" id="counter-main">
-    <img src="counter.png" id="counter-auto"> <div id="customer-layer"></div>
+    <img src="counter.png" id="counter-auto">
+    
+    <div id="customer-layer"></div>
+    <img src="cleaner_idle.png" class="actor" id="cleaner" style="display:none; right:10%; bottom:9%;">
 
-    <img src="cleaner_idle.png" class="actor" id="cleaner">
     <div id="btn-collect" onclick="manualSale()">COLLECT $</div>
 </div>
 
@@ -68,47 +78,54 @@
 
 <script>
     let cash = 200, stock = 0, lvl = 1, xp = 0;
-    let spawnRate = 5000;
-    const items = ["🍎", "🥛", "🍞", "🍪"];
-
-    document.addEventListener('click', () => { document.getElementById('bgm').play(); }, {once: true});
+    let shelfCap = 9, maxStock = 36;
+    let items = ["🍎", "🥛", "🍞", "🍪"];
 
     function update() {
         document.getElementById('c-val').innerText = `$${cash}`;
         document.getElementById('l-val').innerText = lvl;
-        document.getElementById('s-val').innerText = `${stock}/36`;
+        document.getElementById('s-val').innerText = `${stock}/${maxStock}`;
         document.getElementById('x-val').innerText = `${xp}%`;
 
-        if(lvl >= 2) {
-            document.getElementById('counter-auto').style.display = 'block';
-            spawnRate = 2500; // Speed up customers
-        }
+        if(lvl >= 2) document.getElementById('counter-auto').style.display = 'block';
 
         for(let s=1; s<=4; s++) {
             const grid = document.getElementById(`ig${s}`);
             grid.innerHTML = "";
-            let start = (s-1)*9, end = Math.min(stock, s*9);
+            let start = (s-1)*shelfCap, end = Math.min(stock, s*shelfCap);
             for(let i=start; i<end; i++) grid.innerHTML += `<span>${items[i%4]}</span>`;
         }
     }
 
+    function upgradeShelves() {
+        if(cash >= 100) {
+            cash -= 100;
+            shelfCap = 18; // 9 se badhkar 18
+            maxStock = 72;
+            document.querySelectorAll('.shelf').forEach(s => s.classList.add('large'));
+            alert("Shelves Upgraded! Capacity doubled.");
+            update();
+        }
+    }
+
     function refill() {
-        if(cash >= 50) { cash -= 50; stock = Math.min(stock + 12, 36); update(); }
+        if(cash >= 50) { cash -= 50; stock = Math.min(stock + 15, maxStock); update(); }
+    }
+
+    function buyCleaner() {
+        if(cash >= 150) { cash -= 150; document.getElementById('cleaner').style.display='block'; update(); }
     }
 
     function createCustomer() {
         if (stock <= 0) return;
-        
         const layer = document.getElementById('customer-layer');
         const c = document.createElement('img');
         const types = ["man", "old_lady", "police"];
         const type = types[Math.floor(Math.random() * 3)];
-        
         c.src = `${type}_walk.png`;
         c.className = "actor customer";
         layer.appendChild(c);
 
-        // Decide which counter to go to
         const isAuto = (lvl >= 2 && Math.random() > 0.5);
         const targetX = isAuto ? "75%" : "30%";
 
@@ -117,18 +134,14 @@
             setTimeout(() => {
                 c.src = `${type}_idle.png`;
                 if(isAuto) {
-                    // Auto Billing
-                    setTimeout(() => {
-                        cash += 50; stock--; xp += 15;
-                        checkLevel(); update(); leave(c, type);
-                    }, 1000);
+                    setTimeout(() => { cash += 50; stock--; xp += 15; checkLevel(); update(); leave(c, type); }, 1000);
                 } else {
-                    // Manual Billing
-                    document.getElementById('btn-collect').style.display = 'block';
-                    document.getElementById('btn-collect').onclick = () => {
+                    const btn = document.getElementById('btn-collect');
+                    btn.style.display = 'block';
+                    btn.onclick = () => {
                         cash += (type === "police" ? 100 : 50);
                         stock--; xp += 20;
-                        document.getElementById('btn-collect').style.display = 'none';
+                        btn.style.display = 'none';
                         checkLevel(); update(); leave(c, type);
                     };
                 }
@@ -142,14 +155,10 @@
         setTimeout(() => el.remove(), 1200);
     }
 
-    function checkLevel() {
-        if(xp >= 100) { xp = 0; lvl++; alert("LEVEL UP! Auto-Counter Unlocked!"); }
-    }
+    function checkLevel() { if(xp >= 100) { xp = 0; lvl++; update(); } }
 
-    setInterval(() => {
-        if(document.querySelectorAll('.customer').length < (lvl + 1)) createCustomer();
-    }, 3000);
-
+    setInterval(() => { if(document.querySelectorAll('.customer').length < (lvl + 1)) createCustomer(); }, 4000);
+    document.addEventListener('click', () => { document.getElementById('bgm').play(); }, {once: true});
     update();
 </script>
 </body>
