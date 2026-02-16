@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Grounded Fix</title>
+    <title>Shop Simulator - Locked Borders</title>
     <style>
         body { 
-            background: #000; margin: 0; display: flex; justify-content: center; 
+            background: #111; margin: 0; display: flex; justify-content: center; 
             align-items: center; height: 100vh; overflow: hidden;
             font-family: 'Courier New', monospace; 
         }
@@ -13,78 +13,78 @@
         #game-window {
             position: relative; width: 800px; height: 800px;
             background: #222 url('background.png') no-repeat center;
-            background-size: 100% 100%; border: 4px solid #444;
+            background-size: 100% 100%; border: 10px solid #333;
+            /* Isse koi bhi sprite image se bahar nahi dikhega */
+            overflow: hidden; 
         }
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
         /* --- 2 SHELVES ATTACHED TO GROUND --- */
-        .shelf { width: 180px; bottom: 380px; z-index: 1; }
-        #s1 { left: 120px; } 
-        #s2 { left: 500px; } 
+        .shelf { width: 170px; bottom: 385px; z-index: 1; }
+        #s1 { left: 100px; } 
+        #s2 { left: 530px; } 
 
         /* --- PLAYER & COUNTER --- */
-        #player { width: 200px; bottom: 380px; left: 300px; z-index: 5; }
-        #counter { width: 340px; bottom: 250px; left: 230px; z-index: 10; }
+        #player { width: 190px; bottom: 395px; left: 305px; z-index: 5; }
+        #counter { width: 320px; bottom: 250px; left: 240px; z-index: 10; }
 
-        /* --- CUSTOMER WALKING ON GROUND --- */
+        /* --- CUSTOMER (Grounded and Big) --- */
         #customer { 
-            width: 260px; 
-            bottom: 30px; /* Attached to the bottom floor tiles */
-            left: -400px; 
-            z-index: 20; 
-            transition: all 1.2s ease-in-out; 
+            width: 240px; bottom: 30px; 
+            left: -260px; /* Start position inside hidden area */
+            z-index: 20; transition: all 1.2s ease-in-out; 
         }
 
+        /* Status Text (Finding Item) */
         #finding-text {
-            position: absolute; width: 220px; text-align: center;
-            color: #0f0; font-weight: bold; font-size: 22px;
-            background: rgba(0,0,0,0.8); padding: 8px; border: 2px solid #0f0;
-            border-radius: 5px; display: none; z-index: 30;
+            position: absolute; width: 180px; text-align: center;
+            color: #0f0; font-weight: bold; font-size: 20px;
+            background: rgba(0,0,0,0.8); padding: 5px; border: 2px solid #0f0;
+            border-radius: 8px; display: none; z-index: 30;
         }
 
         /* UI HUD */
         #hud {
-            position: absolute; top: 20px; width: 100%;
+            position: absolute; top: 15px; width: 100%;
             display: flex; justify-content: space-around; z-index: 100;
         }
-        .stats { background: rgba(0,0,0,0.9); color: #fff; padding: 10px 20px; border: 2px solid #555; border-radius: 8px; font-size: 22px; }
+        .stats { background: rgba(0,0,0,0.9); color: #fff; padding: 8px 15px; border: 2px solid #444; border-radius: 5px; font-size: 20px; }
 
         #controls {
             position: absolute; bottom: 30px; width: 100%;
-            display: flex; justify-content: center; gap: 15px; z-index: 100;
+            display: flex; justify-content: center; gap: 10px; z-index: 100;
         }
 
-        button { padding: 15px 35px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; font-size: 18px; transition: 0.1s; }
-        .btn-sale { background: #27ae60; box-shadow: 0 5px #1e8449; }
-        .btn-upgrade { background: #2980b9; box-shadow: 0 5px #1b4f72; }
-        .btn-refill { background: #e67e22; box-shadow: 0 5px #a05817; }
-        button:active { transform: translateY(3px); box-shadow: none; }
+        button { padding: 12px 25px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; color: white; font-size: 16px; transition: 0.2s; }
+        .btn-sale { background: #27ae60; box-shadow: 0 4px #1e8449; }
+        .btn-upgrade { background: #2980b9; box-shadow: 0 4px #1b4f72; }
+        .btn-refill { background: #e67e22; box-shadow: 0 4px #a05817; }
+        button:active { transform: translateY(2px); box-shadow: none; }
+        button:disabled { background: #555; cursor: not-allowed; opacity: 0.6; }
     </style>
 </head>
 <body>
 
 <div id="game-window">
     <div id="hud">
-        <div class="stats">💰 $<span id="bal">0</span></div>
-        <div class="stats">📦 STOCK: <span id="stock">5</span>/5</div>
+        <div class="stats">CASH: $<span id="bal">0</span></div>
+        <div class="stats">STOCK: <span id="stock">5</span>/5</div>
     </div>
 
-    <div id="finding-text">Checking for items...</div>
+    <div id="finding-text">Found it!</div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
     <img src="shelf_full.png" id="s2" class="sprite shelf">
 
     <img src="player (2).png" id="player" class="sprite">
-
     <img src="counter.png" id="counter" class="sprite">
-
     <img src="customer.png" id="customer" class="sprite">
 
     <div id="controls">
-        <button id="saleBtn" class="btn-sale" onclick="startSale()">SELL TO CUSTOMER</button>
-        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">REFILL SHELVES ($50)</button>
-        <button class="btn-upgrade" onclick="levelUp()">BUY UPGRADE ($200)</button>
+        <button id="saleBtn" class="btn-sale" onclick="startSale()">SALE</button>
+        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">REFILL ($50)</button>
+        <button class="btn-upgrade" onclick="levelUp()">UPGRADE ($200)</button>
     </div>
 </div>
 
@@ -92,7 +92,7 @@
     let cash = 0;
     let stock = 5;
     let level = 1;
-    const items = ["Fresh Milk", "Whole Bread", "Organic Eggs", "Cold Soda"];
+    const items = ["MILK", "BREAD", "SODA", "EGGS"];
 
     function startSale() {
         if (stock <= 0) return;
@@ -103,19 +103,19 @@
 
         saleBtn.disabled = true;
         
-        // Walk In
-        cust.style.left = "270px"; 
+        // Walk inside the screen area only
+        cust.style.left = "280px"; 
 
         setTimeout(() => {
             const randomItem = items[Math.floor(Math.random() * items.length)];
-            text.innerText = "BUYING: " + randomItem;
+            text.innerText = "WANT: " + randomItem;
             text.style.display = "block";
-            text.style.left = "290px";
-            text.style.bottom = "320px";
+            text.style.left = "310px";
+            text.style.bottom = "280px";
 
             setTimeout(() => {
-                let gain = 20 + (level * 10);
-                cash += gain;
+                let profit = 20 + (level * 10);
+                cash += profit;
                 stock--;
                 
                 document.getElementById('bal').innerText = cash;
@@ -123,16 +123,17 @@
                 text.style.display = "none";
 
                 if (stock <= 0) {
-                    updateShelves('shelf_empty.png');
+                    document.getElementById('s1').src = 'shelf_empty.png';
+                    document.getElementById('s2').src = 'shelf_empty.png';
                     document.getElementById('saleBtn').style.display = "none";
                     document.getElementById('refillBtn').style.display = "block";
                 }
 
-                // Walk Out
-                cust.style.left = "1200px"; 
+                // Walks out of view but stays within overflow:hidden
+                cust.style.left = "850px"; 
                 setTimeout(() => {
                     cust.style.transition = "none";
-                    cust.style.left = "-400px";
+                    cust.style.left = "-260px";
                     setTimeout(() => { 
                         cust.style.transition = "all 1.2s ease-in-out"; 
                         if (stock > 0) saleBtn.disabled = false;
@@ -148,7 +149,8 @@
             stock = 5;
             document.getElementById('bal').innerText = cash;
             document.getElementById('stock').innerText = stock;
-            updateShelves('shelf_full.png');
+            document.getElementById('s1').src = 'shelf_full.png';
+            document.getElementById('s2').src = 'shelf_full.png';
             document.getElementById('saleBtn').style.display = "block";
             document.getElementById('saleBtn').disabled = false;
             document.getElementById('refillBtn').style.display = "none";
@@ -160,13 +162,8 @@
             cash -= 200;
             level++;
             document.getElementById('bal').innerText = cash;
-            alert("Upgrade Bought! Sales are now more profitable.");
+            alert("Upgrade Successful!");
         }
-    }
-
-    function updateShelves(img) {
-        document.getElementById('s1').src = img;
-        document.getElementById('s2').src = img;
     }
 </script>
 
