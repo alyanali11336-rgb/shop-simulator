@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Balanced Physics</title>
+    <title>Shop Simulator - Fixed Version</title>
     <style>
         body {
             margin: 0; overflow: hidden; display: flex;
@@ -14,10 +14,21 @@
             width: 85vw; height: 70vh; background: #2c3e50;
             position: relative; display: flex; flex-direction: column;
             justify-content: flex-end; align-items: center;
-            border: 5px solid #5d4037;
+            border: 5px solid #5d4037; overflow: hidden;
         }
 
-        /* Balanced Elements */
+        /* --- Shelves Wapas Aa Gaye --- */
+        .shelf-container {
+            position: absolute; top: 10%; width: 90%;
+            display: flex; justify-content: space-around; z-index: 2;
+        }
+        .rack {
+            width: 150px; height: 120px; background: #5d4037;
+            border: 4px solid #4a332a; display: grid;
+            grid-template-rows: repeat(2, 1fr); gap: 5px; padding: 5px;
+        }
+        .shelf-row { border-bottom: 2px solid #4a332a; display: flex; justify-content: space-around; align-items: center; font-size: 25px; min-height: 40px; }
+
         .floor {
             position: absolute; bottom: 0; width: 100%; height: 30%;
             background: #5d4037; border-top: 8px solid #4a332a; z-index: 1;
@@ -28,10 +39,11 @@
             background: #8b4513; border: 5px solid #5d4037; z-index: 10;
         }
 
+        /* PLAYER: Thoda niche kiya (bottom 33% se 30% kiya) */
         #player-sprite {
-            position: absolute; bottom: 33%; width: 220px; 
+            position: absolute; bottom: 30%; width: 220px; 
             left: 50%; transform: translateX(-50%);
-            z-index: 5; image-rendering: pixelated;
+            z-index: 5; image-rendering: pixelated; transition: left 0.1s linear;
         }
 
         #customer-sprite {
@@ -40,11 +52,14 @@
             image-rendering: pixelated;
         }
 
-        /* Trash: Only Leaves */
-        .trash {
-            position: absolute; width: 30px; height: 30px; 
-            font-size: 25px; cursor: pointer; z-index: 15;
+        /* Library Modal (Add Items) */
+        #library-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #e1b382; border: 5px solid #5d4037; padding: 20px;
+            z-index: 300; display: none; text-align: center; border-radius: 10px;
         }
+        .library-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .lib-item { background: #5d4037; padding: 10px; cursor: pointer; color: white; border-radius: 5px; }
 
         /* UI Panel */
         #ui-panel {
@@ -53,38 +68,74 @@
             justify-content: center; align-items: center; gap: 15px;
         }
         .stat-box { background: #5d4037; color: #f1c40f; padding: 10px; border-radius: 5px; font-weight: bold; }
-        .game-btn { padding: 12px 18px; font-weight: bold; cursor: pointer; border: none; border-radius: 10px; color: white; }
+        .game-btn { padding: 12px 18px; font-weight: bold; cursor: pointer; border: none; border-radius: 10px; color: white; box-shadow: 0 4px #a04500; }
 
-        #clean-warning {
-            position: absolute; top: 10px; background: #e74c3c; color: white;
-            padding: 5px 20px; border-radius: 5px; display: none; z-index: 100;
-        }
+        .trash { position: absolute; font-size: 25px; cursor: pointer; z-index: 15; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="clean-warning">⚠️ SHOP DIRTY!</div>
+    <div class="shelf-container" id="shelves">
+        <div class="rack">
+            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
+            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
+        </div>
+        <div class="rack">
+            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
+            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
+        </div>
+    </div>
+
     <div class="floor"></div>
     <img src="player.png" id="player-sprite">
     <div class="counter"></div>
     <img src="ladycustomar.png" id="customer-sprite">
+    
     <button id="bill-btn" class="game-btn" style="position:absolute; bottom:42%; left:50%; transform:translateX(-50%); background:#f1c40f; color:black; display:none; z-index:150;" onclick="processBill()">SELL 🧾</button>
+</div>
+
+<div id="library-modal">
+    <h3>🛒 SHOP INVENTORY</h3>
+    <div class="library-grid">
+        <div class="lib-item" onclick="buyItem('🍎', 20)">🍎<br>$20</div>
+        <div class="lib-item" onclick="buyItem('🥤', 30)">🥤<br>$30</div>
+        <div class="lib-item" onclick="buyItem('🧸', 50)">🧸<br>$50</div>
+    </div>
+    <button onclick="closeLibrary()" style="margin-top:10px;">CLOSE</button>
 </div>
 
 <div id="ui-panel">
     <div class="stat-box">💰 $<span id="cash">200</span></div>
-    <div class="stat-box">🍃 DIRT: <span id="dirt-count">0</span></div>
-    <button class="game-btn" style="background: #27ae60;" onclick="buyApple()">BUY STOCK ($20)</button>
+    <div class="stat-box">📦 <span id="stock-display">0</span>/8</div>
+    <button class="game-btn" style="background: #27ae60;" onclick="openLibrary()">ADD ITEMS (+)</button>
     <button id="hire-btn" class="game-btn" style="background: #3498db;" onclick="hireCleaner()">HIRE CLEANER ($150)</button>
-    <div style="font-size:12px; color:#5d4037;">Arrow Keys ⬅️ ➡️ to Move</div>
 </div>
 
 <script>
-    let cash = 200, dirt = 0, isWaiting = false, hasCleaner = false;
-    let playerPos = 50;
+    let cash = 200, dirt = 0, stock = 0, isWaiting = false, playerPos = 50;
+    let itemsOnShelf = [];
 
-    // Movement
+    function openLibrary() { document.getElementById('library-modal').style.display = 'block'; }
+    function closeLibrary() { document.getElementById('library-modal').style.display = 'none'; }
+
+    function buyItem(emoji, price) {
+        if (cash >= price && itemsOnShelf.length < 8) {
+            cash -= price;
+            itemsOnShelf.push(emoji);
+            updateUI();
+            updateShelves();
+        } else { alert("Not enough cash or shelf full!"); }
+    }
+
+    function updateShelves() {
+        const slots = document.querySelectorAll('.slot');
+        slots.forEach((slot, i) => {
+            slot.innerText = itemsOnShelf[i] || "";
+        });
+    }
+
+    // Player Movement
     window.addEventListener('keydown', (e) => {
         const player = document.getElementById('player-sprite');
         if (e.key === 'ArrowLeft' && playerPos > 30) playerPos -= 3;
@@ -92,42 +143,31 @@
         player.style.left = playerPos + "%";
     });
 
-    // Cleaner Hire
     function hireCleaner() {
-        if (cash >= 150 && !hasCleaner) {
+        if (cash >= 150) {
             cash -= 150;
-            hasCleaner = true;
-            document.getElementById('hire-btn').innerText = "CLEANER ACTIVE ✅";
-            document.getElementById('hire-btn').style.opacity = "0.7";
             updateUI();
-            // Cleaner logic: removes dirt every 3 seconds
+            document.getElementById('hire-btn').innerText = "CLEANER ON ✅";
             setInterval(() => {
-                let allTrash = document.querySelectorAll('.trash');
-                if (allTrash.length > 0) {
-                    allTrash[0].remove();
-                    dirt--;
-                    updateUI();
-                }
+                let leaves = document.querySelectorAll('.trash');
+                if (leaves.length > 0) { leaves[0].remove(); dirt--; updateUI(); }
             }, 3000);
         }
     }
 
     function spawnCustomer() {
-        if (isWaiting || dirt > 6) return;
+        if (isWaiting) return;
         isWaiting = true;
         const cust = document.getElementById('customer-sprite');
         cust.style.left = "40%"; 
-        
-        // Leaves fall
         setTimeout(() => {
-            if (Math.random() > 0.4) createLeaf();
-            document.getElementById('bill-btn').style.display = "block";
+            if (Math.random() > 0.5) createLeaf();
+            if (itemsOnShelf.length > 0) document.getElementById('bill-btn').style.display = "block";
+            else setTimeout(customerLeave, 2000);
         }, 1500);
     }
 
     function createLeaf() {
-        dirt++;
-        updateUI();
         const leaf = document.createElement('div');
         leaf.className = 'trash';
         leaf.innerText = '🍃';
@@ -135,14 +175,18 @@
         leaf.style.bottom = "5%";
         leaf.onclick = function() { this.remove(); dirt--; updateUI(); };
         document.getElementById('game-container').appendChild(leaf);
-        if (dirt > 4) document.getElementById('clean-warning').style.display = 'block';
+        dirt++; updateUI();
     }
 
     function processBill() {
-        cash += 50;
-        updateUI();
-        document.getElementById('bill-btn').style.display = "none";
-        customerLeave();
+        if (itemsOnShelf.length > 0) {
+            cash += 60;
+            itemsOnShelf.pop();
+            updateShelves();
+            updateUI();
+            document.getElementById('bill-btn').style.display = "none";
+            customerLeave();
+        }
     }
 
     function customerLeave() {
@@ -156,8 +200,7 @@
 
     function updateUI() {
         document.getElementById('cash').innerText = cash;
-        document.getElementById('dirt-count').innerText = dirt;
-        if (dirt <= 4) document.getElementById('clean-warning').style.display = 'none';
+        document.getElementById('stock-display').innerText = itemsOnShelf.length;
     }
 
     setInterval(spawnCustomer, 6000);
