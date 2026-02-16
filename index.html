@@ -1,31 +1,154 @@
-<style>
-    /* Counter ko Player se chhota aur mini kiya gaya hai */
-    #counter-img { 
-        position: absolute; 
-        bottom: 26%; 
-        left: 50%; 
-        transform: translateX(-50%); 
-        width: 180px; /* Pehle 240px tha, ab chhota hai */
-        height: auto;
-        z-index: 15; 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mega Shop Sim - Fixed</title>
+    <style>
+        :root { --ui-panel: #3e2723; --gold: #f1c40f; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
+
+        /* Stats Bar (Top) */
+        #top-stats {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            background: var(--ui-panel); padding: 12px; border-bottom: 4px solid var(--gold); z-index: 100;
+        }
+        .stat-item { color: var(--gold); text-align: center; font-size: 0.8rem; font-weight: bold; border-right: 1px solid #5d4037; }
+
+        /* Game Screen */
+        #game-view {
+            flex: 1; position: relative; 
+            background: linear-gradient(#2c3e50 65%, #4a332d 65%); /* Floor line */
+        }
+
+        /* Gravity & Size Fixes */
+        .shelf-container { position: absolute; width: 140px; top: 25%; z-index: 5; }
+        #sc-1 { left: 5%; }
+        #sc-2 { right: 5%; }
+        .shelf-img { width: 100%; }
+        .items-overlay { position: absolute; top: 5px; width: 100%; text-align: center; font-size: 1.2rem; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; }
+
+        /* Counter: Chhota and on floor */
+        #counter-img { position: absolute; bottom: 26%; left: 50%; transform: translateX(-50%); width: 180px; z-index: 15; }
+
+        /* Characters: Uniform Size */
+        .char { position: absolute; height: 150px; width: auto; transition: left 1.5s linear; }
+        #player { bottom: 33%; left: 50%; transform: translateX(-50%); z-index: 10; }
+        #customer { bottom: 10%; left: -200px; z-index: 20; }
+        #cleaner { bottom: 10%; z-index: 18; display: none; }
+
+        /* Collect Button */
+        #btn-collect { 
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            background: #f39c12; color: white; padding: 12px 24px; border-radius: 50px;
+            font-weight: bold; display: none; z-index: 200; border: 3px solid white; cursor: pointer;
+        }
+
+        /* Bottom Controls */
+        #controls { height: 12vh; background: #e1b382; display: flex; padding: 10px; gap: 10px; border-top: 5px solid #3e2723; }
+        .btn-ui { flex: 1; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; cursor: pointer; color: white; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+<div id="top-stats">
+    <div class="stat-item">CASH<br><span id="cash-val">$200</span></div>
+    <div class="stat-item">LVL<br><span id="lvl-val">1</span></div>
+    <div class="stat-item">STOCK<br><span id="stk-val">0/50</span></div>
+    <div class="stat-item">XP<br><span id="xp-val">0%</span></div>
+</div>
+
+<div id="game-view">
+    <div class="shelf-container" id="sc-1">
+        <div class="items-overlay" id="inv-1"></div>
+        <img src="shelf.png" class="shelf-img">
+    </div>
+    <div class="shelf-container" id="sc-2">
+        <div class="items-overlay" id="inv-2"></div>
+        <img src="shelf.png" class="shelf-img">
+    </div>
+
+    <img src="player.png" class="char" id="player"> 
+    <img src="counter.png" id="counter-img"> 
+    
+    <img src="man_idle.png" class="char" id="customer"> 
+    <img src="cleaner_idle.png" class="char" id="cleaner">
+
+    <div id="btn-collect" onclick="handleSale()">COLLECT CASH 💰</div>
+</div>
+
+<div id="controls">
+    <button class="btn-ui" style="background:#27ae60;" onclick="refillStock()">REFILL ($50)</button>
+    <button class="btn-ui" style="background:#2980b9;" onclick="hireCleaner()">HIRE CLEANER ($150)</button>
+</div>
+
+<script>
+    let cash = 200, lvl = 1, stock = 0, xp = 0, active = false;
+    let type = "";
+    const items = ["🍎", "🥛", "🍞", "🍪"];
+
+    function update() {
+        document.getElementById('cash-val').innerText = `$${cash}`;
+        document.getElementById('lvl-val').innerText = lvl;
+        document.getElementById('stk-val').innerText = `${stock}/50`;
+        document.getElementById('xp-val').innerText = `${xp}%`;
+        
+        // Shelf Visualization
+        const s1 = document.getElementById('inv-1');
+        const s2 = document.getElementById('inv-2');
+        s1.innerHTML = ""; s2.innerHTML = "";
+        for(let i=0; i<Math.min(stock, 15); i++) s1.innerHTML += items[i%4];
+        for(let i=15; i<Math.min(stock, 30); i++) s2.innerHTML += items[i%4];
     }
 
-    /* Player ki position aur size ko counter ke hisab se set kiya */
-    #player { 
-        position: absolute;
-        bottom: 32%; /* Player ko counter ke peeche sahi height par rakha */
-        left: 50%; 
-        transform: translateX(-50%); 
-        height: 155px; /* Fixed height for uniformity */
-        width: auto;
-        z-index: 10; 
+    function refillStock() {
+        if(cash >= 50) { cash -= 50; stock = Math.min(stock + 20, 50); update(); }
     }
 
-    /* Customers aur Cleaner ka size bhi uniform rakha */
-    .character { 
-        position: absolute; 
-        height: 150px; 
-        width: auto; 
-        transition: left 1.5s linear; 
+    function spawn() {
+        if(active) return;
+        active = true;
+        const c = document.getElementById('customer');
+        const pool = ["man", "old_lady", "police"];
+        type = pool[Math.floor(Math.random() * pool.length)];
+        
+        c.src = `${type}_walk.png`;
+        c.style.left = "42%";
+
+        setTimeout(() => {
+            c.src = `${type}_idle.png`;
+            if(stock > 0) document.getElementById('btn-collect').style.display = 'block';
+            else setTimeout(leave, 1000);
+        }, 1500);
     }
-</style>
+
+    function handleSale() {
+        let reward = (type === "police") ? 100 : 50;
+        cash += reward; stock--; xp += 20;
+        document.getElementById('btn-collect').style.display = 'none';
+        if(xp >= 100) { xp = 0; lvl++; alert("LEVEL UP!"); }
+        update(); leave();
+    }
+
+    function leave() {
+        const c = document.getElementById('customer');
+        c.src = `${type}_walk.png`;
+        c.style.left = "110%";
+        setTimeout(() => {
+            c.style.transition = "none"; c.style.left = "-200px";
+            setTimeout(() => { c.style.transition = "left 1.5s linear"; active = false; }, 100);
+        }, 1500);
+    }
+
+    function hireCleaner() {
+        if(cash >= 150) {
+            cash -= 150; document.getElementById('cleaner').style.display = 'block';
+            document.getElementById('cleaner').style.left = "80%"; update();
+        }
+    }
+
+    setInterval(spawn, 5000);
+    update();
+</script>
+</body>
+</html>
