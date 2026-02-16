@@ -3,184 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Elite Shop Sim Pro</title>
+    <title>Shop Sim - Clean Edition</title>
     <style>
-        :root { --glass: rgba(0,0,0,0.7); --neon: #00f2ff; --gold: #f1c40f; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: white; overflow: hidden; }
+        #hud { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); z-index: 100; border-bottom: 2px solid #ffd700; }
+        .val { color: #ffd700; font-weight: bold; font-size: 1.2rem; }
 
-        /* HUD Glass UI */
-        #hud {
-            position: absolute; top: 0; width: 100%; display: flex; justify-content: space-around;
-            padding: 15px 0; background: var(--glass); backdrop-filter: blur(10px); z-index: 1000;
-        }
-        .stat-val { font-size: 1.2rem; font-weight: bold; color: var(--gold); }
-
-        #stage { position: relative; height: 100vh; width: 100%; background: linear-gradient(to bottom, #2c3e50, #000); }
+        #game { position: relative; height: 100vh; width: 100%; background: linear-gradient(#2c3e50 60%, #4a332d 60%); }
 
         /* Shelves */
-        .shelf { position: absolute; width: 150px; height: 110px; background: url('shelf.png') no-repeat bottom/contain; z-index: 50; }
-        #s1 { top:20%; left:8%; } #s2 { top:20%; right:8%; }
-        #s3 { top:45%; left:8%; } #s4 { top:45%; right:8%; }
-        .item-grid { display: grid; grid-template-columns: repeat(3, 1fr); position: absolute; bottom: 25px; width: 100%; text-align: center; }
+        .shelf { position: absolute; width: 130px; height: 100px; background: url('shelf.png') no-repeat bottom/contain; z-index: 10; }
+        #s1 { top: 20%; left: 10%; } #s2 { top: 20%; right: 10%; }
+        #s3 { top: 42%; left: 10%; } #s4 { top: 42%; right: 10%; }
+        .items { position: absolute; bottom: 25px; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; font-size: 1.2rem; }
 
-        /* Actors */
-        .actor { position: absolute; height: 145px; z-index: 400; transition: all 1s ease; }
-        #player { bottom: 33%; left: 35%; transform: translateX(-50%); }
-        #cleaner { bottom: 9%; left: 80%; display: none; transition: left 2s ease; }
+        /* Characters */
+        .actor { position: absolute; height: 140px; z-index: 20; transition: all 1s ease; }
+        .counter { position: absolute; bottom: 25%; width: 160px; z-index: 30; pointer-events: none; }
+        #player { bottom: 32%; left: 35%; transform: translateX(-50%); }
+        #cleaner { bottom: 8%; right: 5%; display: none; }
 
-        /* DOG (Code Generated) */
-        #dog-container { position: absolute; bottom: 30%; left: 5%; width: 60px; height: 40px; z-index: 350; }
-        .dog-body { background: #8d6e63; width: 40px; height: 25px; border-radius: 10px; position: absolute; bottom: 0; }
-        .dog-head { background: #8d6e63; width: 20px; height: 20px; border-radius: 50%; position: absolute; top: -10px; right: -5px; }
-        .dog-ear { background: #5d4037; width: 8px; height: 12px; border-radius: 40%; position: absolute; top: -5px; }
+        /* Dog (CSS Built) */
+        #dog { position: absolute; bottom: 35%; left: 5%; width: 40px; height: 25px; background: #8d6e63; border-radius: 5px; z-index: 5; }
+        #dog::before { content: ''; position: absolute; top: -10px; right: -5px; width: 15px; height: 15px; background: #8d6e63; border-radius: 50%; }
 
-        /* Stickman Thief */
-        .stickman { position: absolute; bottom: 8%; font-size: 3rem; z-index: 600; cursor: pointer; transition: left 3s linear; }
-
-        /* UI Elements */
-        #receipt {
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            background: white; color: black; padding: 20px; border-radius: 15px; display: none; z-index: 2000; text-align: center;
-        }
-
-        #footer { position: absolute; bottom: 0; width: 100%; display: flex; padding: 15px; background: var(--glass); z-index: 1001; box-sizing: border-box; }
-        .btn { flex: 1; margin: 0 5px; padding: 12px; border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; }
-        .btn-green { background: #27ae60; } .btn-blue { background: #2980b9; }
+        /* UI */
+        #collect-btn { position: absolute; top: 45%; left: 35%; transform: translate(-50%, -50%); padding: 15px 30px; background: #27ae60; border: 3px solid white; border-radius: 50px; font-weight: bold; cursor: pointer; display: none; z-index: 100; }
+        
+        #footer { position: absolute; bottom: 0; width: 100%; display: flex; padding: 10px; background: rgba(0,0,0,0.8); box-sizing: border-box; }
+        button { flex: 1; margin: 0 5px; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-refill { background: #e67e22; }
+        .btn-clean { background: #3498db; }
     </style>
 </head>
 <body>
 
 <div id="hud">
-    <div>CASH: <span id="c-val" class="stat-val">$300</span></div>
-    <div>STOCK: <span id="s-val" class="stat-val">0/36</span></div>
-    <div>LVL: <span id="l-val" class="stat-val">1</span></div>
+    <div>Cash: <span id="cash" class="val">$200</span></div>
+    <div>Stock: <span id="stock" class="val">0/36</span></div>
 </div>
 
-<div id="stage">
-    <div id="dog-container">
-        <div class="dog-body"></div>
-        <div class="dog-head"><div class="dog-ear"></div></div>
-    </div>
-
-    <div id="s1" class="shelf"><div class="item-grid" id="ig1"></div></div>
-    <div id="s2" class="shelf"><div class="item-grid" id="ig2"></div></div>
-    <div id="s3" class="shelf"><div class="item-grid" id="ig3"></div></div>
-    <div id="s4" class="shelf"><div class="item-grid" id="ig4"></div></div>
+<div id="game">
+    <div id="dog"></div>
+    <div class="shelf" id="shelf1"><div class="items" id="ig1"></div></div>
+    <div class="shelf" id="shelf2"><div class="items" id="ig2"></div></div>
+    <div class="shelf" id="shelf3"><div class="items" id="ig3"></div></div>
+    <div class="shelf" id="shelf4"><div class="items" id="ig4"></div></div>
 
     <img src="player.png" id="player" class="actor">
     <img src="cleaner_idle.png" id="cleaner" class="actor">
-    <img src="counter.png" class="counter" style="position:absolute; bottom:25%; left:35%; width:170px; z-index:500;">
+    <img src="counter.png" class="counter" style="left: 35%;">
 
-    <div id="cust-layer"></div>
-    <div id="garbage-layer"></div>
-
-    <div id="receipt">
-        <h3>BILLING</h3>
-        <p id="rec-info"></p>
-        <h2 id="rec-total"></h2>
-        <button onclick="finishBilling()" class="btn btn-green" style="width:100%">COLLECT CASH</button>
-    </div>
+    <div id="customers"></div>
+    <div id="collect-btn" onclick="collectCash()">COLLECT CASH</div>
 </div>
 
 <div id="footer">
-    <button class="btn btn-green" onclick="refill()">Order Stock ($50)</button>
-    <button id="hire-btn" class="btn btn-blue" onclick="hireCleaner()">Hire Cleaner ($150)</button>
+    <button class="btn-refill" onclick="refill()">Fill Stock ($50)</button>
+    <button class="btn-clean" id="h-btn" onclick="buyCleaner()">Hire Cleaner ($150)</button>
 </div>
 
 <script>
-    let cash = 300, stock = 0, lvl = 1, xp = 0, hasCleaner = false;
-    const items = ["🍎", "🥛", "🍞", "🍪", "🍕"];
-    let activeCust = null;
+    let cash = 200, stock = 0, cleanerHired = false;
+    const items = ["🍎", "🥛", "🍞", "🍪"];
+    let currentCust = null;
 
     function update() {
-        document.getElementById('c-val').innerText = `$${cash}`;
-        document.getElementById('s-val').innerText = `${stock}/36`;
-        document.getElementById('l-val').innerText = lvl;
+        document.getElementById('cash').innerText = `$${cash}`;
+        document.getElementById('stock').innerText = `${stock}/36`;
         for(let i=1; i<=4; i++) {
             const g = document.getElementById(`ig${i}`); g.innerHTML = "";
-            let start = (i-1)*9; let end = Math.min(stock, i*9);
-            for(let j=start; j<end; j++) g.innerHTML += `<span>${items[j%5]}</span>`;
+            let end = Math.min(stock, i*9);
+            for(let j=(i-1)*9; j<end; j++) g.innerHTML += `<span>${items[j%4]}</span>`;
         }
     }
 
     function refill() { if(cash >= 50 && stock < 36) { cash -= 50; stock += 12; update(); } }
 
-    function hireCleaner() {
-        if(cash >= 150) {
-            cash -= 150; hasCleaner = true;
-            document.getElementById('cleaner').style.display = "block";
-            document.getElementById('hire-btn').style.display = "none";
-            update();
-        }
-    }
-
-    function spawnGarbage(x) {
-        const g = document.createElement('div');
-        g.style.cssText = `position:absolute; bottom:10%; left:${x}; font-size:1.5rem; z-index:550;`;
-        g.innerText = "🗑️";
-        document.getElementById('garbage-layer').appendChild(g);
-        
-        if(hasCleaner) {
-            const cl = document.getElementById('cleaner');
-            cl.src = "cleaner_walk.png";
-            cl.style.left = x; // Move to garbage
-            setTimeout(() => {
-                g.remove(); cl.src = "cleaner_idle.png";
-                setTimeout(() => { cl.style.left = "80%"; }, 1000); // Move back
-            }, 2000);
-        } else {
-            g.onclick = () => { g.remove(); cash += 5; update(); };
-        }
+    function buyCleaner() { 
+        if(cash >= 150) { 
+            cash -= 150; cleanerHired = true; 
+            document.getElementById('cleaner').style.display = 'block';
+            document.getElementById('h-btn').style.display = 'none';
+            update(); 
+        } 
     }
 
     function spawn() {
-        if(stock <= 0 || document.querySelectorAll('.cust-box').length > 3) return;
-        const layer = document.getElementById('cust-layer');
-        const box = document.createElement('div');
-        box.className = "cust-box";
-        box.style.cssText = "position:absolute; bottom:8%; left:-100px; z-index:600; transition:all 1.2s;";
-        const type = ["man", "old_lady", "police"][Math.floor(Math.random()*3)];
-        box.innerHTML = `<img src="${type}_walk.png" style="height:130px;">`;
-        layer.appendChild(box);
+        if(stock <= 0 || document.querySelectorAll('.cust').length > 0) return;
+        const c = document.createElement('img');
+        const type = ["man", "old_lady"][Math.floor(Math.random()*2)];
+        c.src = `${type}_walk.png`; c.className = "actor cust"; c.style.left = "-100px"; c.style.bottom = "8%";
+        document.getElementById('customers').appendChild(c);
 
         setTimeout(() => {
-            let shelfX = (Math.random() > 0.5 ? "15%" : "80%");
-            box.style.left = shelfX;
+            c.style.left = "15%"; // Go to shelf
             setTimeout(() => {
-                const item = items[Math.floor(Math.random()*5)];
                 stock--; update();
-                box.style.left = "35%";
+                c.style.left = "35%"; // Go to counter
                 setTimeout(() => {
-                    activeCust = { el: box, type: type, item: item, x: "35%" };
-                    document.getElementById('receipt').style.display = "block";
-                    document.getElementById('rec-info').innerText = "Item: " + item;
-                    document.getElementById('rec-total').innerText = "$" + (type === "police" ? 100 : 60);
-                }, 1200);
+                    c.src = `${type}_idle.png`;
+                    currentCust = { el: c, type: type };
+                    document.getElementById('collect-btn').style.display = "block";
+                }, 1000);
             }, 1000);
         }, 100);
     }
 
-    function finishBilling() {
-        cash += (activeCust.type === "police" ? 100 : 60);
-        document.getElementById('receipt').style.display = "none";
-        if(Math.random() > 0.4) spawnGarbage(activeCust.x);
-        activeCust.el.style.left = "110%";
-        setTimeout(() => activeCust.el.remove(), 1500);
+    function collectCash() {
+        cash += 60; document.getElementById('collect-btn').style.display = "none";
+        const target = currentCust.el;
+        target.src = `${currentCust.type}_walk.png`;
+        target.style.left = "110%";
+        
+        // Cleaner logic (automatic)
+        if(cleanerHired) {
+            const cl = document.getElementById('cleaner');
+            cl.style.left = "35%";
+            setTimeout(() => { cl.style.left = "80%"; }, 1500);
+        }
+
+        setTimeout(() => target.remove(), 1200);
+        currentCust = null;
         update();
     }
 
-    // Stickman Thief Character
-    function spawnThief() {
-        if(Math.random() > 0.5) return;
-        const s = document.createElement('div');
-        s.className = "stickman"; s.innerText = "🏃‍♂️"; s.style.left = "110%";
-        document.getElementById('stage').appendChild(s);
-        setTimeout(() => { s.style.left = "-100px"; }, 100);
-        s.onclick = () => { cash += 50; s.innerText = "😵"; setTimeout(() => s.remove(), 500); update(); };
-    }
-
-    setInterval(spawn, 5000);
-    setInterval(spawnThief, 10000);
+    setInterval(spawn, 4000);
     update();
 </script>
 </body>
