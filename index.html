@@ -3,214 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mega Shop Sim - Moods & Tips</title>
+    <title>Elite Shop Manager Pro</title>
     <style>
-        :root { --ui: #3e2723; --gold: #f1c40f; }
-        body { margin: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
-        
-        #top { background: var(--ui); border-bottom: 4px solid var(--gold); z-index: 100; }
-        #stats { display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px; }
-        .stat-item { color: var(--gold); text-align: center; font-size: 0.8rem; font-weight: bold; }
-        
-        #upgrade-menu { display: flex; justify-content: center; gap: 10px; padding: 5px; background: rgba(0,0,0,0.3); }
-        .btn-up { background: #d35400; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+        :root { 
+            --glass: rgba(255, 255, 255, 0.1);
+            --gold: #ffcc00;
+            --night-bg: #1a1a2e;
+            --day-bg: #3498db;
+        }
 
-        #game { flex: 1; position: relative; background: linear-gradient(#2c3e50 65%, #4a332d 65%); }
+        body { 
+            margin: 0; font-family: 'Poppins', sans-serif; 
+            background: #121212; color: white; overflow: hidden; 
+            user-select: none; transition: background 2s ease;
+        }
 
-        /* Shelves */
-        .shelf { position: absolute; width: 100px; z-index: 5; transition: 0.5s; }
-        .shelf.large { width: 130px; }
-        #s1 { top: 15%; left: 5%; } #s2 { top: 15%; right: 5%; }
-        #s3 { top: 38%; left: 5%; } #s4 { top: 38%; right: 5%; }
-        .items-grid { position: absolute; bottom: 15px; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); justify-items: center; }
+        /* Modern Glass UI */
+        #hud {
+            position: absolute; top: 0; width: 100%; display: flex; 
+            justify-content: space-around; padding: 15px 0;
+            background: var(--glass); backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(255,255,255,0.1); z-index: 1000;
+        }
+        .stat-box { text-align: center; }
+        .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #aaa; }
+        .stat-val { font-size: 1.1rem; font-weight: bold; color: var(--gold); }
 
-        /* Layering Fix: Counter is in FRONT */
-        .counter { position: absolute; bottom: 25%; width: 160px; z-index: 50; pointer-events: none; }
-        #counter-main { left: 35%; }
-        #counter-auto { right: 15%; display: none; filter: hue-rotate(90deg); }
+        /* Game Stage with Lighting */
+        #game-canvas {
+            position: relative; height: 100vh; width: 100%;
+            background: linear-gradient(to bottom, var(--day-bg) 0%, #2980b9 50%, #795548 50%);
+            transition: filter 3s ease;
+        }
+        .night-mode #game-canvas { filter: brightness(0.6) saturate(1.2); }
 
-        /* Actors BEHIND counter */
-        .actor { position: absolute; height: 145px; transition: left 1s linear; z-index: 40; }
-        #player { bottom: 32%; left: 35%; transform: translateX(-50%); }
-        #auto-bot { bottom: 32%; right: 15%; transform: translateX(50%); display: none; }
+        /* Professional Shelves */
+        .shelf-unit {
+            position: absolute; width: 120px; height: 100px;
+            background: url('shelf.png') no-repeat center bottom/contain;
+            z-index: 50; filter: drop-shadow(0 10px 5px rgba(0,0,0,0.3));
+        }
+        .item-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            position: absolute; bottom: 20px; width: 100%; padding: 5px;
+        }
+        .item-grid span { font-size: 1.2rem; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5)); }
+
+        /* Layered World */
+        .counter-desk { position: absolute; bottom: 25%; width: 180px; z-index: 500; }
+        #player { position: absolute; bottom: 33%; z-index: 400; transition: left 0.5s; height: 150px; }
         
-        /* Customers & UI in FRONT */
-        .customer-box { position: absolute; bottom: 9%; width: 100px; height: 160px; z-index: 60; transition: left 1s linear; }
-        .cust-img { height: 145px; width: auto; }
-        
-        /* Moods & Speech Bubbles */
-        .mood { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 1.5rem; }
-        .speech { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); background: white; padding: 5px 10px; border-radius: 10px; font-size: 0.7rem; width: 80px; text-align: center; border: 1px solid #ccc; font-weight: bold; }
+        .customer-ent { 
+            position: absolute; bottom: 8%; z-index: 600; 
+            transition: left 1.5s linear; display: flex; flex-direction: column; align-items: center;
+        }
+        .speech-bubble {
+            background: white; color: black; padding: 5px 12px; border-radius: 15px;
+            font-size: 0.7rem; font-weight: bold; margin-bottom: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2); position: relative;
+        }
 
-        .garbage { position: absolute; bottom: 12%; font-size: 1.5rem; z-index: 55; cursor: pointer; }
-        #btn-collect { position: absolute; top: 40%; left: 35%; transform: translate(-50%, -50%); background: #f39c12; color: white; padding: 12px 24px; border-radius: 50px; font-weight: bold; display: none; z-index: 200; border: 3px solid white; cursor: pointer; }
-        
-        #footer { height: 10vh; background: #e1b382; display: flex; padding: 10px; border-top: 5px solid var(--ui); }
-        .btn-main { flex: 1; border: none; border-radius: 10px; font-weight: bold; color: white; background: #27ae60; cursor: pointer; }
+        /* Controls */
+        #controls {
+            position: absolute; bottom: 0; width: 100%; height: 12vh;
+            display: flex; gap: 10px; padding: 15px; box-sizing: border-box;
+            background: var(--glass); backdrop-filter: blur(15px); z-index: 1001;
+        }
+        .btn-action {
+            flex: 1; border: none; border-radius: 12px; font-weight: bold;
+            text-transform: uppercase; color: white; cursor: pointer;
+            transition: transform 0.1s; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-action:active { transform: scale(0.95); }
+        .btn-green { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .btn-purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+
+        #cash-pop {
+            position: absolute; top: 40%; left: 35%; transform: translate(-50%, -50%);
+            padding: 20px 40px; background: var(--gold); color: black;
+            border-radius: 50px; font-weight: 900; z-index: 2000;
+            display: none; border: 4px solid white; cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-<audio id="bgm" loop><source src="Aylex - Innovating Care (freetouse.com).mp3" type="audio/mpeg"></audio>
-
-<div id="top">
-    <div id="stats">
-        <div class="stat-item">CASH<br><span id="c-val">$200</span></div>
-        <div class="stat-item">LVL<br><span id="l-val">1</span></div>
-        <div class="stat-item">STOCK<br><span id="s-val">0/36</span></div>
-        <div class="stat-item">XP<br><span id="x-val">0%</span></div>
-    </div>
-    <div id="upgrade-menu">
-        <button class="btn-up" onclick="upgradeShelves()">UPGRADE SHELVES ($100)</button>
-        <button class="btn-up" style="background:#2980b9;" onclick="buyCleaner()">CLEANER ($150)</button>
-    </div>
+<div id="hud">
+    <div class="stat-box"><div class="stat-label">Capital</div><div id="cash-val" class="stat-val">$250</div></div>
+    <div class="stat-box"><div class="stat-label">Store Level</div><div id="lvl-val" class="stat-val">1</div></div>
+    <div class="stat-box"><div class="stat-label">Inventory</div><div id="stk-val" class="stat-val">0/36</div></div>
+    <div class="stat-box"><div class="stat-label">Time</div><div id="time-val" class="stat-val">08:00 AM</div></div>
 </div>
 
-<div id="game">
-    <div class="shelf" id="shelf1"><div class="items-grid" id="ig1"></div><img src="shelf.png" width="100%"></div>
-    <div class="shelf" id="shelf2"><div class="items-grid" id="ig2"></div><img src="shelf.png" width="100%"></div>
-    <div class="shelf" id="shelf3"><div class="items-grid" id="ig3"></div><img src="shelf.png" width="100%"></div>
-    <div class="shelf" id="shelf4"><div class="items-grid" id="ig4"></div><img src="shelf.png" width="100%"></div>
+<div id="game-canvas">
+    <div id="shelf1" class="shelf-unit" style="top: 15%; left: 5%;"><div class="item-grid" id="ig1"></div></div>
+    <div id="shelf2" class="shelf-unit" style="top: 15%; right: 5%;"><div class="item-grid" id="ig2"></div></div>
+    <div id="shelf3" class="shelf-unit" style="top: 38%; left: 5%;"><div class="item-grid" id="ig3"></div></div>
+    <div id="shelf4" class="shelf-unit" style="top: 38%; right: 5%;"><div class="item-grid" id="ig4"></div></div>
 
-    <img src="player.png" class="actor" id="player">
-    <img src="police_idle.png" class="actor" id="auto-bot"> 
+    <img src="player.png" id="player" style="left: 35%;">
+    <img src="police_idle.png" id="bot" class="actor" style="position:absolute; bottom:33%; right:15%; display:none; height:150px; z-index:400;">
 
-    <img src="counter.png" class="counter" id="counter-main">
-    <img src="counter.png" class="counter" id="counter-auto">
+    <img src="counter.png" id="c1" class="counter-desk" style="left: 35%;">
+    <img src="counter.png" id="c2" class="counter-desk" style="right: 15%; display:none; filter: grayscale(1) brightness(1.5);">
+
+    <div id="customer-container"></div>
+    <div id="garbage-container"></div>
     
-    <div id="customer-layer"></div>
-    <img src="cleaner_idle.png" class="actor" id="cleaner" style="display:none; right:5%; bottom:9%; z-index: 56;">
-
-    <div id="btn-collect" onclick="manualSale()">COLLECT $</div>
+    <div id="cash-pop" onclick="collectPayment()">COLLECT CASH</div>
 </div>
 
-<div id="footer">
-    <button class="btn-main" onclick="refill()">REFILL STOCK ($50)</button>
+<div id="controls">
+    <button class="btn-action btn-green" onclick="orderStock()">Order Stock ($50)</button>
+    <button id="hire-btn" class="btn-action btn-purple" onclick="hireStaff()">Hire Cleaner ($150)</button>
 </div>
 
 <script>
-    let cash = 200, stock = 0, lvl = 1, xp = 0;
-    let shelfCap = 9, maxStock = 36, cleanerActive = false;
-    const items = ["🍎", "🥛", "🍞", "🍪"];
-    const quotes = ["Good price!", "Clean shop!", "Need more stock", "Hurry up!", "Love it!", "Tip for you!"];
+    // Game State
+    let cash = 250, stock = 0, level = 1, xp = 0;
+    let hour = 8, minute = 0;
+    let maxStock = 36, shelfCap = 9;
+    let hasCleaner = false, hasAutoBot = false;
+    let activeCustomer = null;
 
-    function update() {
-        document.getElementById('c-val').innerText = `$${cash}`;
-        document.getElementById('l-val').innerText = lvl;
-        document.getElementById('s-val').innerText = `${stock}/${maxStock}`;
-        document.getElementById('x-val').innerText = `${xp}%`;
+    const items = ["🍎", "🥛", "🍞", "🍕", "🍪", "🍩"];
+    const quotes = ["Quick service!", "Love this place", "Need more variety", "Clean floor!", "Best shop in town"];
 
-        if(lvl >= 2) {
-            document.getElementById('counter-auto').style.display = 'block';
-            document.getElementById('auto-bot').style.display = 'block';
-        }
+    function updateHUD() {
+        document.getElementById('cash-val').innerText = `$${cash}`;
+        document.getElementById('lvl-val').innerText = level;
+        document.getElementById('stk-val').innerText = `${stock}/${maxStock}`;
+        
+        // Day/Night Logic
+        let ampm = hour >= 12 ? 'PM' : 'AM';
+        let displayHour = hour % 12 || 12;
+        document.getElementById('time-val').innerText = `${displayHour}:${minute === 0 ? '00' : '30'} ${ampm}`;
+        
+        if(hour >= 18 || hour <= 6) document.body.classList.add('night-mode');
+        else document.body.classList.remove('night-mode');
 
+        // Shelf Rendering
         for(let s=1; s<=4; s++) {
             const grid = document.getElementById(`ig${s}`);
             grid.innerHTML = "";
             let start = (s-1)*shelfCap, end = Math.min(stock, s*shelfCap);
-            for(let i=start; i<end; i++) grid.innerHTML += `<span>${items[i%4]}</span>`;
+            for(let i=start; i<end; i++) grid.innerHTML += `<span>${items[i%items.length]}</span>`;
         }
     }
 
-    function upgradeShelves() {
-        if(cash >= 100) {
-            cash -= 100; shelfCap = 18; maxStock = 72;
-            document.querySelectorAll('.shelf').forEach(s => s.classList.add('large'));
-            update();
+    // Professional Stock Ordering
+    function orderStock() {
+        if(cash >= 50 && stock < maxStock) {
+            cash -= 50; stock = Math.min(stock + 12, maxStock);
+            updateHUD();
         }
     }
 
-    function refill() { if(cash >= 50) { cash -= 50; stock = Math.min(stock + 20, maxStock); update(); } }
+    function spawnCustomer() {
+        if(document.querySelectorAll('.customer-ent').length > 3 || stock <= 0) return;
 
-    function buyCleaner() { if(cash >= 150) { cash -= 150; cleanerActive = true; document.getElementById('cleaner').style.display='block'; update(); } }
+        const container = document.getElementById('customer-container');
+        const cust = document.createElement('div');
+        cust.className = "customer-ent";
+        cust.style.left = "-150px";
 
-    function createCustomer() {
-        if (stock <= 0) return;
-        const layer = document.getElementById('customer-layer');
-        const box = document.createElement('div');
-        box.className = "customer-box";
-        box.style.left = "-200px";
-        
-        const types = ["man", "old_lady", "police"];
-        const type = types[Math.floor(Math.random() * 3)];
-        
-        box.innerHTML = `
+        const type = ["man", "old_lady", "police"][Math.floor(Math.random()*3)];
+        cust.innerHTML = `
+            <div class="speech" style="visibility:hidden">Hello!</div>
             <div class="mood">😊</div>
-            <div class="speech" style="display:none"></div>
-            <img src="${type}_walk.png" class="cust-img">
+            <img src="${type}_walk.png" style="height:140px;">
         `;
-        layer.appendChild(box);
+        container.appendChild(cust);
 
-        const isAuto = (lvl >= 2 && Math.random() > 0.5);
-        const targetX = isAuto ? "80%" : "35%";
+        const isAuto = (hasAutoBot && Math.random() > 0.5);
+        const targetX = isAuto ? "78%" : "35%";
 
         setTimeout(() => {
-            box.style.left = targetX;
+            cust.style.left = targetX;
             setTimeout(() => {
-                box.querySelector('img').src = `${type}_idle.png`;
-                
-                // Show Mood change if waiting
-                setTimeout(() => { if(box.parentNode) box.querySelector('.mood').innerText = "😐"; }, 2000);
-
+                cust.querySelector('img').src = `${type}_idle.png`;
                 if(isAuto) {
-                    setTimeout(() => processSale(box, type, true, targetX), 1500);
+                    setTimeout(() => finishAuto(cust, type), 2000);
                 } else {
-                    const btn = document.getElementById('btn-collect');
-                    btn.style.display = 'block';
-                    btn.onclick = () => processSale(box, type, false, targetX);
+                    activeCustomer = { el: cust, type: type };
+                    document.getElementById('cash-pop').style.display = 'block';
                 }
-            }, 1000);
+            }, 1500);
         }, 100);
     }
 
-    function processSale(box, type, isAuto, x) {
-        let tip = (Math.random() > 0.7) ? Math.floor(Math.random() * 20) : 0;
-        cash += (type === "police" ? 100 : 50) + tip;
-        stock--; xp += 20;
+    function collectPayment() {
+        if(!activeCustomer) return;
+        let bonus = (activeCustomer.type === "police") ? 100 : 60;
+        cash += bonus; stock--; xp += 25;
+        document.getElementById('cash-pop').style.display = 'none';
         
-        document.getElementById('btn-collect').style.display = 'none';
+        let sp = activeCustomer.el.querySelector('.speech');
+        sp.style.visibility = 'visible';
+        sp.innerText = quotes[Math.floor(Math.random()*quotes.length)];
         
-        // Show Speech Bubble
-        const sp = box.querySelector('.speech');
-        sp.innerText = tip > 0 ? `Tip: $${tip}!` : quotes[Math.floor(Math.random() * quotes.length)];
-        sp.style.display = 'block';
-        box.querySelector('.mood').innerText = "🤩";
-
-        if(Math.random() > 0.5) spawnGarbage(x);
-        checkLevel(); update();
-        setTimeout(() => leave(box, type), 1000);
+        if(Math.random() > 0.4) createMess(activeCustomer.el.style.left);
+        
+        let target = activeCustomer.el;
+        let tType = activeCustomer.type;
+        activeCustomer = null;
+        
+        setTimeout(() => leave(target, tType), 1000);
+        checkLevel(); updateHUD();
     }
 
-    function spawnGarbage(x) {
+    function finishAuto(cust, type) {
+        cash += 50; stock--; xp += 15;
+        cust.querySelector('.mood').innerText = "🤖";
+        updateHUD(); leave(cust, type);
+    }
+
+    function createMess(x) {
         const g = document.createElement('div');
-        g.className = 'garbage'; g.innerHTML = '🗑️';
+        g.className = "garbage"; g.innerHTML = "🗑️";
         g.style.left = x;
-        document.getElementById('game').appendChild(g);
-        if(cleanerActive) {
+        document.getElementById('garbage-container').appendChild(g);
+        
+        if(hasCleaner) {
             const cl = document.getElementById('cleaner');
             cl.style.left = x;
-            setTimeout(() => { g.remove(); cash += 10; cl.style.left = "90%"; update(); }, 1200);
+            setTimeout(() => { g.remove(); cash += 10; cl.style.left = "90%"; updateHUD(); }, 1500);
         } else {
-            g.onclick = () => { g.remove(); cash += 5; update(); };
+            g.onclick = () => { g.remove(); cash += 5; updateHUD(); };
         }
     }
 
-    function leave(box, type) {
-        box.querySelector('img').src = `${type}_walk.png`;
-        box.style.left = "110%";
-        setTimeout(() => box.remove(), 1200);
+    function leave(el, type) {
+        el.querySelector('img').src = `${type}_walk.png`;
+        el.style.left = "110%";
+        setTimeout(() => el.remove(), 2000);
     }
 
-    function checkLevel() { if(xp >= 100) { xp = 0; lvl++; update(); } }
+    function checkLevel() {
+        if(xp >= 100) {
+            xp = 0; level++;
+            if(level === 2) {
+                hasAutoBot = true;
+                document.getElementById('c2').style.display = 'block';
+                document.getElementById('bot').style.display = 'block';
+                alert("Level 2! Auto-Counter Online.");
+            }
+        }
+    }
 
+    function hireStaff() {
+        if(cash >= 150) {
+            cash -= 150; hasCleaner = true;
+            const cl = document.createElement('img');
+            cl.id = "cleaner"; cl.src = "cleaner_idle.png";
+            cl.className = "actor"; cl.style.cssText = "position:absolute; bottom:9%; right:5%; height:140px; z-index:550; transition: left 1s;";
+            document.getElementById('game-canvas').appendChild(cl);
+            document.getElementById('hire-btn').style.display = 'none';
+            updateHUD();
+        }
+    }
+
+    // Time Cycle
     setInterval(() => {
-        let maxCust = (lvl >= 2) ? 4 : 2;
-        if(document.querySelectorAll('.customer-box').length < maxCust) createCustomer();
-    }, (lvl >= 2 ? 3000 : 5000));
+        minute += 30;
+        if(minute >= 60) { minute = 0; hour++; }
+        if(hour >= 24) hour = 0;
+        updateHUD();
+    }, 5000);
 
-    document.addEventListener('click', () => { document.getElementById('bgm').play(); }, {once: true});
-    update();
+    setInterval(spawnCustomer, 4000);
+    updateHUD();
 </script>
 </body>
 </html>
