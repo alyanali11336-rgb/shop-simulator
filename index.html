@@ -3,50 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shop Sim - Guard & 50-Stacks</title>
+    <title>Shop Sim - Garbage System</title>
     <style>
         :root { --ui-panel: #3e2723; --gold: #f1c40f; }
         body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #1a1a1a; overflow: hidden; font-family: sans-serif; }
 
-        /* Stats & Hiring Menu */
+        /* Stats & Hiring Bar */
         #top-ui { background: var(--ui-panel); border-bottom: 4px solid var(--gold); z-index: 100; }
         #stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); padding: 10px; }
         .stat-item { color: var(--gold); text-align: center; font-size: 0.8rem; font-weight: bold; }
-        
         #hire-bar { display: flex; justify-content: center; padding: 8px; gap: 10px; background: rgba(0,0,0,0.3); }
-        .btn-hire { background: #8e44ad; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.75rem; }
+        .btn-hire { background: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.75rem; }
 
-        /* Game Stage */
+        /* Stage Area */
         #stage { flex: 1; position: relative; background: linear-gradient(#2c3e50 65%, #4a332d 65%); }
-
-        /* 50-Item Stacks on 4 Shelves */
         .shelf-box { position: absolute; width: 120px; height: 90px; z-index: 5; }
         #s1 { top: 15%; left: 5%; } #s2 { top: 15%; right: 5%; }
         #s3 { top: 38%; left: 5%; } #s4 { top: 38%; right: 5%; }
+        .items-layer { position: absolute; bottom: 15px; width: 100%; display: flex; flex-wrap: wrap-reverse; justify-content: center; gap: 2px; max-height: 70px; }
+        .items-layer span { font-size: 1.2rem; }
 
-        .items-layer { 
-            position: absolute; bottom: 15px; width: 100%; 
-            display: flex; flex-wrap: wrap-reverse; justify-content: center; 
-            gap: 2px; max-height: 70px; 
-        }
-        .items-layer span { font-size: 1.2rem; line-height: 0.9; }
-
-        /* Assets Position */
+        /* Assets */
         #counter { position: absolute; bottom: 26%; left: 50%; transform: translateX(-50%); width: 180px; z-index: 15; }
         .actor { position: absolute; height: 145px; width: auto; transition: left 1.5s linear; }
         #player { bottom: 33%; left: 50%; transform: translateX(-50%); z-index: 10; }
         #customer { bottom: 9%; left: -200px; z-index: 20; }
-        #cleaner { bottom: 9%; right: 15%; display: none; }
-        #guard { bottom: 9%; left: 10%; display: none; transform: scaleX(-1); } /* Guard at entrance */
+        #cleaner { bottom: 9%; right: 10%; display: none; z-index: 18; transition: all 1s ease; }
+        #guard { bottom: 9%; left: 5%; display: none; transform: scaleX(-1); z-index: 18; }
 
-        #collect-cash { 
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            background: #f39c12; color: white; padding: 12px 24px; border-radius: 50px;
-            font-weight: bold; display: none; z-index: 200; border: 3px solid white;
-        }
+        /* Garbage Styling */
+        .garbage { position: absolute; bottom: 12%; font-size: 1.5rem; cursor: pointer; z-index: 19; animation: pop 0.3s ease; }
+        @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
 
-        #footer-actions { height: 10vh; background: #e1b382; display: flex; padding: 10px; border-top: 5px solid var(--ui-panel); }
-        .btn-refill { flex: 1; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; color: white; background: #27ae60; }
+        #collect-cash { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); background: #f39c12; color: white; padding: 12px 24px; border-radius: 50px; font-weight: bold; display: none; z-index: 200; border: 3px solid white; cursor: pointer; }
+        #footer { height: 10vh; background: #e1b382; display: flex; padding: 10px; border-top: 5px solid var(--ui-panel); }
+        .btn-refill { flex: 1; border: none; border-radius: 10px; font-weight: bold; font-size: 1rem; color: white; background: #27ae60; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -61,8 +52,8 @@
         <div class="stat-item">XP<br><span id="val-xp">0%</span></div>
     </div>
     <div id="hire-bar">
-        <button class="btn-hire" style="background:#2980b9;" onclick="buyStaff('cleaner', 150)">CLEANER ($150)</button>
-        <button class="btn-hire" onclick="buyStaff('guard', 300)">GUARD ($300)</button>
+        <button class="btn-hire" onclick="buyStaff('cleaner', 150)">CLEANER ($150)</button>
+        <button class="btn-hire" style="background:#8e44ad;" onclick="buyStaff('guard', 300)">GUARD ($300)</button>
     </div>
 </div>
 
@@ -76,15 +67,17 @@
     <img src="counter.png" id="counter"> 
     <img src="man_idle.png" class="actor" id="customer">
     <img src="cleaner_idle.png" class="actor" id="cleaner">
-    <img src="police_idle.png" class="actor" id="guard"> <div id="collect-cash" onclick="finishSale()">COLLECT $</div>
+    <img src="police_idle.png" class="actor" id="guard">
+
+    <div id="collect-cash" onclick="finishSale()">COLLECT $</div>
 </div>
 
-<div id="footer-actions">
+<div id="footer">
     <button class="btn-refill" onclick="restock()">REFILL STOCK ($50)</button>
 </div>
 
 <script>
-    let money = 200, level = 1, stock = 0, xp = 0, isBusy = false, guardActive = false;
+    let money = 200, level = 1, stock = 0, xp = 0, isBusy = false, hasCleaner = false, hasGuard = false;
     let currentType = "";
     const emojiList = ["🍎", "🥛", "🍞", "🍕", "🍪"];
 
@@ -99,15 +92,11 @@
         document.getElementById('val-stk').innerText = `${stock}/100`;
         document.getElementById('val-xp').innerText = `${xp}%`;
         
-        // Stacking Logic for 50 items per side (25 per shelf)
         for(let i=1; i<=4; i++) {
             const layer = document.getElementById(`lay-${i}`);
             layer.innerHTML = "";
-            let start = (i-1)*25;
-            let end = Math.min(stock, i*25);
-            for(let j=start; j<end; j++) {
-                layer.innerHTML += `<span>${emojiList[j % emojiList.length]}</span>`;
-            }
+            let start = (i-1)*25, end = Math.min(stock, i*25);
+            for(let j=start; j<end; j++) layer.innerHTML += `<span>${emojiList[j % emojiList.length]}</span>`;
         }
     }
 
@@ -118,8 +107,8 @@
     function buyStaff(role, price) {
         if(money >= price) {
             money -= price;
-            if(role === 'guard') { guardActive = true; document.getElementById('guard').style.display = 'block'; }
-            else { document.getElementById('cleaner').style.display = 'block'; }
+            if(role === 'guard') { hasGuard = true; document.getElementById('guard').style.display = 'block'; }
+            else { hasCleaner = true; document.getElementById('cleaner').style.display = 'block'; }
             updateView();
         }
     }
@@ -127,14 +116,13 @@
     function spawnCust() {
         if(isBusy) return; isBusy = true;
         const c = document.getElementById('customer');
-        const types = ["man", "old_lady", "police"];
-        currentType = types[Math.floor(Math.random() * types.length)];
-        
+        const pool = ["man", "old_lady", "police"];
+        currentType = pool[Math.floor(Math.random() * pool.length)];
         c.src = `${currentType}_walk.png`;
-        c.style.left = (guardActive) ? "25%" : "42%"; // Guard checks first
+        c.style.left = (hasGuard) ? "25%" : "42%";
 
         setTimeout(() => {
-            if(guardActive) { xp += 5; updateView(); } // Guard bonus
+            if(hasGuard) xp += 5;
             c.style.left = "42%";
             setTimeout(() => {
                 c.src = `${currentType}_idle.png`;
@@ -148,8 +136,39 @@
         money += (currentType === "police") ? 120 : 60;
         stock--; xp += 20;
         document.getElementById('collect-cash').style.display = 'none';
+        
+        // Garbage chance: 50%
+        if(Math.random() > 0.5) createGarbage();
+
         if(xp >= 100) { xp=0; level++; }
         updateView(); leaveShop();
+    }
+
+    function createGarbage() {
+        const stage = document.getElementById('stage');
+        const g = document.createElement('div');
+        g.className = 'garbage';
+        g.innerHTML = '🗑️';
+        g.style.left = (30 + Math.random() * 40) + "%";
+        g.onclick = () => cleanGarbage(g);
+        stage.appendChild(g);
+
+        // If cleaner exists, he moves to clean it
+        if(hasCleaner) {
+            const cleaner = document.getElementById('cleaner');
+            const targetPos = g.style.left;
+            cleaner.style.left = targetPos;
+            setTimeout(() => cleanGarbage(g), 1500);
+        }
+    }
+
+    function cleanGarbage(el) {
+        if(el.parentNode) {
+            el.parentNode.removeChild(el);
+            money += 10; // Bonus for cleaning
+            updateView();
+            if(hasCleaner) document.getElementById('cleaner').style.left = "80%";
+        }
     }
 
     function leaveShop() {
