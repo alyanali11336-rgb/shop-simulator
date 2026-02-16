@@ -1,86 +1,58 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator Pro - Fixed</title>
+    <title>Shop Sim: Pro Edition</title>
     <style>
-        /* Prevents white screen flickering and centers the game */
         body { 
-            background: #000; 
-            margin: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            overflow: hidden;
+            background: #000; margin: 0; display: flex; justify-content: center; 
+            align-items: center; height: 100vh; overflow: hidden;
             font-family: 'Courier New', monospace; 
         }
         
         #game-window {
-            position: relative;
-            width: 800px;
-            height: 800px;
-            background: #222 url('background.png') no-repeat center center;
-            background-size: 100% 100%;
-            border: 5px solid #444;
-            image-rendering: pixelated;
+            position: relative; width: 800px; height: 800px;
+            background: #222 url('background.png') no-repeat center;
+            background-size: 100% 100%; border: 4px solid #444;
         }
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* --- FIXED ALIGNMENT --- */
-        .shelf { width: 160px; top: 145px; z-index: 1; }
-        #s1 { left: 80px; } 
-        #s2 { left: 320px; } 
-        #s3 { left: 560px; }
+        /* SHELF ALIGNMENT */
+        .shelf { width: 140px; top: 150px; z-index: 1; }
+        #s1 { left: 100px; } #s2 { left: 330px; } #s3 { left: 560px; }
 
-        #player { width: 140px; bottom: 405px; left: 330px; z-index: 5; }
-        #counter { width: 480px; bottom: 240px; left: 160px; z-index: 10; }
-        
-        /* Customer start position lowered to stay on floor */
+        /* BIGGER PLAYER & SMALLER COUNTER */
+        #player { width: 180px; bottom: 390px; left: 310px; z-index: 5; }
+        #counter { width: 320px; bottom: 260px; left: 240px; z-index: 10; } /* Made Smaller */
+
+        /* BIGGER CUSTOMER - Starting off-screen left */
         #customer { 
-            width: 180px; 
-            bottom: 40px; 
-            left: -250px; 
-            z-index: 20; 
-            transition: all 1s ease-in-out; 
+            width: 220px; bottom: 40px; left: -300px; 
+            z-index: 20; transition: all 1s ease-in-out; 
         }
 
-        /* --- UI & SPEECH BUBBLE --- */
+        /* UI ELEMENTS */
         #hud {
             position: absolute; top: 20px; width: 100%;
-            display: flex; justify-content: center; z-index: 100;
+            display: flex; justify-content: space-around; z-index: 100;
         }
-        .stats-box {
-            background: rgba(0, 0, 0, 0.9); color: #00ff00; padding: 15px 30px;
-            border: 3px solid #00ff00; font-size: 24px; font-weight: bold; border-radius: 12px;
-        }
+        .stats { background: rgba(0,0,0,0.8); color: #0f0; padding: 10px 20px; border: 2px solid #0f0; border-radius: 8px; font-size: 20px; }
 
-        #speech-bubble {
-            position: absolute; bottom: 250px; left: 320px;
-            background: white; color: black; padding: 10px;
-            border-radius: 10px; border: 3px solid #333;
-            font-weight: bold; display: none; z-index: 30;
-        }
-
-        #ui-controls {
+        #controls {
             position: absolute; bottom: 30px; width: 100%;
-            display: flex; justify-content: center; z-index: 100;
+            display: flex; justify-content: center; gap: 10px; z-index: 100;
         }
 
-        button { 
-            padding: 15px 45px; font-size: 22px; cursor: pointer; border: none; 
-            font-weight: bold; border-radius: 10px; color: white;
-        }
-        #serveBtn { background: #27ae60; box-shadow: 0 6px #1e8449; }
-        #refillBtn { background: #e67e22; box-shadow: 0 6px #a05817; display: none; }
-        button:disabled { background: #444; box-shadow: none; opacity: 0.6; }
+        button { padding: 15px 30px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; color: white; }
+        .btn-sale { background: #27ae60; }
+        .btn-buy { background: #2980b9; }
+        .btn-refill { background: #e67e22; }
+        button:disabled { background: #555; opacity: 0.7; }
 
-        #game-over {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); color: #ff0000; display: none;
-            flex-direction: column; justify-content: center; align-items: center; z-index: 1000;
+        #speech {
+            position: absolute; bottom: 300px; left: 350px;
+            background: white; padding: 10px; border-radius: 10px; display: none; z-index: 30;
         }
     </style>
 </head>
@@ -88,10 +60,12 @@
 
 <div id="game-window">
     <div id="hud">
-        <div class="stats-box">💰 $<span id="bal">0</span> | 📦 STOCK: <span id="count">0</span>/5</div>
+        <div class="stats">💰 $<span id="bal">0</span></div>
+        <div class="stats">⭐ LVL: <span id="lvl">1</span></div>
+        <div class="stats">📦 STOCK: <span id="stock">5</span>/5</div>
     </div>
 
-    <div id="speech-bubble">"1 Milk, please!"</div>
+    <div id="speech"></div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
     <img src="shelf_full.png" id="s2" class="sprite shelf">
@@ -101,86 +75,89 @@
     <img src="counter.png" id="counter" class="sprite">
     <img src="customer.png" id="customer" class="sprite">
 
-    <div id="ui-controls">
-        <button id="serveBtn" onclick="serveCustomer()">Serve Customer</button>
-        <button id="refillBtn" onclick="refillShelves()">Refill Shop (-$50)</button>
-    </div>
-
-    <div id="game-over">
-        <h1 style="font-size: 60px;">BANKRUPT</h1>
-        <p>You can't afford more stock!</p>
-        <button style="background:#444" onclick="location.reload()">RESTART</button>
+    <div id="controls">
+        <button id="saleBtn" class="btn-sale" onclick="startSale()">SALE</button>
+        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">REFILL ($50)</button>
+        <button class="btn-buy" onclick="levelUp()">UPGRADE SHOP ($200)</button>
     </div>
 </div>
 
 <script>
-    let totalCash = 0;
-    let itemsSold = 0;
-    const orders = ["1 Milk", "Fresh Bread", "Eggs", "Soda", "Chocolate"];
+    let cash = 0;
+    let stock = 5;
+    let level = 1;
 
-    function serveCustomer() {
-        const customer = document.getElementById('customer');
-        const bubble = document.getElementById('speech-bubble');
-        const serveBtn = document.getElementById('serveBtn');
-        const refillBtn = document.getElementById('refillBtn');
+    function startSale() {
+        if (stock <= 0) return;
+        
+        const cust = document.getElementById('customer');
+        const saleBtn = document.getElementById('saleBtn');
+        const speech = document.getElementById('speech');
 
-        serveBtn.disabled = true;
-        customer.style.left = "310px"; // Walk to counter
+        saleBtn.disabled = true;
+        cust.style.left = "290px"; // Customer moves to counter
 
         setTimeout(() => {
-            // Random Order & Random Price
-            const randomOrder = orders[Math.floor(Math.random() * orders.length)];
-            const randomPrice = Math.floor(Math.random() * 21) + 15; // $15 to $35
-            
-            bubble.innerText = `"${randomOrder}, please!"`;
-            bubble.style.display = "block";
+            speech.innerText = "I need items!";
+            speech.style.display = "block";
 
             setTimeout(() => {
-                totalCash += randomPrice;
-                itemsSold++;
+                let gain = 20 + (level * 5); // Level increases profit
+                cash += gain;
+                stock--;
                 
-                document.getElementById('bal').innerText = totalCash;
-                document.getElementById('count').innerText = itemsSold;
-                bubble.style.display = "none";
-                
-                if (itemsSold >= 5) {
-                    document.getElementById('s1').src = 'shelf_empty.png';
-                    document.getElementById('s2').src = 'shelf_empty.png';
-                    document.getElementById('s3').src = 'shelf_empty.png';
-                    serveBtn.style.display = "none";
-                    refillBtn.style.display = "block";
-                    if (totalCash < 50) setTimeout(() => { document.getElementById('game-over').style.display = 'flex'; }, 1000);
+                document.getElementById('bal').innerText = cash;
+                document.getElementById('stock').innerText = stock;
+                speech.style.display = "none";
+
+                if (stock <= 0) {
+                    updateShelves('shelf_empty.png');
+                    document.getElementById('saleBtn').style.display = "none";
+                    document.getElementById('refillBtn').style.display = "block";
                 }
 
-                // Customer leaves
+                cust.style.left = "1000px"; // Customer leaves
                 setTimeout(() => {
-                    customer.style.left = "900px";
-                    setTimeout(() => {
-                        customer.style.transition = "none";
-                        customer.style.left = "-250px";
-                        setTimeout(() => { 
-                            customer.style.transition = "all 1s ease-in-out"; 
-                            if (itemsSold < 5) serveBtn.disabled = false;
-                        }, 50);
-                    }, 1000);
-                }, 500);
-            }, 1200);
+                    cust.style.transition = "none";
+                    cust.style.left = "-300px";
+                    setTimeout(() => { 
+                        cust.style.transition = "all 1s ease-in-out"; 
+                        if (stock > 0) saleBtn.disabled = false;
+                    }, 50);
+                }, 1000);
+            }, 1000);
         }, 1000);
     }
 
-    function refillShelves() {
-        if (totalCash >= 50) {
-            totalCash -= 50;
-            itemsSold = 0;
-            document.getElementById('bal').innerText = totalCash;
-            document.getElementById('count').innerText = itemsSold;
-            document.getElementById('s1').src = 'shelf_full.png';
-            document.getElementById('s2').src = 'shelf_full.png';
-            document.getElementById('s3').src = 'shelf_full.png';
-            document.getElementById('serveBtn').style.display = "block";
-            document.getElementById('serveBtn').disabled = false;
+    function refill() {
+        if (cash >= 50) {
+            cash -= 50;
+            stock = 5;
+            document.getElementById('bal').innerText = cash;
+            document.getElementById('stock').innerText = stock;
+            updateShelves('shelf_full.png');
+            document.getElementById('saleBtn').style.display = "block";
+            document.getElementById('saleBtn').disabled = false;
             document.getElementById('refillBtn').style.display = "none";
         }
+    }
+
+    function levelUp() {
+        if (cash >= 200) {
+            cash -= 200;
+            level++;
+            document.getElementById('bal').innerText = cash;
+            document.getElementById('lvl').innerText = level;
+            alert("Shop Leveled Up! Customers now pay more!");
+        } else {
+            alert("Not enough cash!");
+        }
+    }
+
+    function updateShelves(img) {
+        document.getElementById('s1').src = img;
+        document.getElementById('s2').src = img;
+        document.getElementById('s3').src = img;
     }
 </script>
 
