@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Fixed Version</title>
+    <title>Shop Simulator - Cleaner Edition</title>
     <style>
         body {
             margin: 0; overflow: hidden; display: flex;
@@ -17,7 +17,7 @@
             border: 5px solid #5d4037; overflow: hidden;
         }
 
-        /* --- Shelves Wapas Aa Gaye --- */
+        /* Shelves */
         .shelf-container {
             position: absolute; top: 10%; width: 90%;
             display: flex; justify-content: space-around; z-index: 2;
@@ -39,11 +39,11 @@
             background: #8b4513; border: 5px solid #5d4037; z-index: 10;
         }
 
-        /* PLAYER: Thoda niche kiya (bottom 33% se 30% kiya) */
+        /* Characters */
         #player-sprite {
             position: absolute; bottom: 30%; width: 220px; 
             left: 50%; transform: translateX(-50%);
-            z-index: 5; image-rendering: pixelated; transition: left 0.1s linear;
+            z-index: 5; image-rendering: pixelated;
         }
 
         #customer-sprite {
@@ -52,90 +52,49 @@
             image-rendering: pixelated;
         }
 
-        /* Library Modal (Add Items) */
-        #library-modal {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #e1b382; border: 5px solid #5d4037; padding: 20px;
-            z-index: 300; display: none; text-align: center; border-radius: 10px;
+        .cleaner-sprite {
+            position: absolute; bottom: 15%; width: 140px; 
+            z-index: 4; image-rendering: pixelated; 
+            transition: left 1s linear; display: none;
         }
-        .library-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .lib-item { background: #5d4037; padding: 10px; cursor: pointer; color: white; border-radius: 5px; }
 
-        /* UI Panel */
+        .trash { position: absolute; font-size: 25px; cursor: pointer; z-index: 15; }
+
+        /* UI & Modals */
         #ui-panel {
             width: 100%; height: 140px; background: #e1b382;
             border-top: 5px solid #5d4037; display: flex;
             justify-content: center; align-items: center; gap: 15px;
         }
         .stat-box { background: #5d4037; color: #f1c40f; padding: 10px; border-radius: 5px; font-weight: bold; }
-        .game-btn { padding: 12px 18px; font-weight: bold; cursor: pointer; border: none; border-radius: 10px; color: white; box-shadow: 0 4px #a04500; }
-
-        .trash { position: absolute; font-size: 25px; cursor: pointer; z-index: 15; }
+        .game-btn { padding: 12px 18px; font-weight: bold; cursor: pointer; border: none; border-radius: 10px; color: white; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <div class="shelf-container" id="shelves">
-        <div class="rack">
-            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
-            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
-        </div>
-        <div class="rack">
-            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
-            <div class="shelf-row"><span class="slot"></span><span class="slot"></span></div>
-        </div>
+        <div class="rack"><div class="shelf-row"><span class="slot"></span><span class="slot"></span></div><div class="shelf-row"><span class="slot"></span><span class="slot"></span></div></div>
+        <div class="rack"><div class="shelf-row"><span class="slot"></span><span class="slot"></span></div><div class="shelf-row"><span class="slot"></span><span class="slot"></span></div></div>
     </div>
 
     <div class="floor"></div>
-    <img src="player.png" id="player-sprite">
-    <div class="counter"></div>
-    <img src="ladycustomar.png" id="customer-sprite">
-    
-    <button id="bill-btn" class="game-btn" style="position:absolute; bottom:42%; left:50%; transform:translateX(-50%); background:#f1c40f; color:black; display:none; z-index:150;" onclick="processBill()">SELL 🧾</button>
-</div>
-
-<div id="library-modal">
-    <h3>🛒 SHOP INVENTORY</h3>
-    <div class="library-grid">
-        <div class="lib-item" onclick="buyItem('🍎', 20)">🍎<br>$20</div>
-        <div class="lib-item" onclick="buyItem('🥤', 30)">🥤<br>$30</div>
-        <div class="lib-item" onclick="buyItem('🧸', 50)">🧸<br>$50</div>
-    </div>
-    <button onclick="closeLibrary()" style="margin-top:10px;">CLOSE</button>
+    <img src="player.png" id="player-sprite"> <div class="counter"></div>
+    <img src="ladycustomar.png" id="customer-sprite"> <img src="cleaner_idle.png" id="cleaner-obj" class="cleaner-sprite"> <button id="bill-btn" class="game-btn" style="position:absolute; bottom:42%; left:50%; transform:translateX(-50%); background:#f1c40f; color:black; display:none; z-index:150;" onclick="processBill()">SELL 🧾</button>
 </div>
 
 <div id="ui-panel">
     <div class="stat-box">💰 $<span id="cash">200</span></div>
-    <div class="stat-box">📦 <span id="stock-display">0</span>/8</div>
-    <button class="game-btn" style="background: #27ae60;" onclick="openLibrary()">ADD ITEMS (+)</button>
+    <div class="stat-box">🍃 DIRT: <span id="dirt-count">0</span></div>
+    <button class="game-btn" style="background: #27ae60;" onclick="buyStock()">BUY STOCK ($20)</button>
     <button id="hire-btn" class="game-btn" style="background: #3498db;" onclick="hireCleaner()">HIRE CLEANER ($150)</button>
 </div>
 
 <script>
-    let cash = 200, dirt = 0, stock = 0, isWaiting = false, playerPos = 50;
-    let itemsOnShelf = [];
+    let cash = 200, dirt = 0, stock = 0, isWaiting = false, hasCleaner = false;
+    let playerPos = 50;
 
-    function openLibrary() { document.getElementById('library-modal').style.display = 'block'; }
-    function closeLibrary() { document.getElementById('library-modal').style.display = 'none'; }
-
-    function buyItem(emoji, price) {
-        if (cash >= price && itemsOnShelf.length < 8) {
-            cash -= price;
-            itemsOnShelf.push(emoji);
-            updateUI();
-            updateShelves();
-        } else { alert("Not enough cash or shelf full!"); }
-    }
-
-    function updateShelves() {
-        const slots = document.querySelectorAll('.slot');
-        slots.forEach((slot, i) => {
-            slot.innerText = itemsOnShelf[i] || "";
-        });
-    }
-
-    // Player Movement
+    // --- PLAYER MOVEMENT ---
     window.addEventListener('keydown', (e) => {
         const player = document.getElementById('player-sprite');
         if (e.key === 'ArrowLeft' && playerPos > 30) playerPos -= 3;
@@ -143,26 +102,58 @@
         player.style.left = playerPos + "%";
     });
 
+    // --- CLEANER LOGIC ---
     function hireCleaner() {
-        if (cash >= 150) {
-            cash -= 150;
+        if (cash >= 150 && !hasCleaner) {
+            cash -= 150; hasCleaner = true;
+            const cln = document.getElementById('cleaner-obj');
+            cln.style.display = 'block';
+            cln.style.left = "10%";
+            document.getElementById('hire-btn').innerText = "CLEANER ACTIVE ✅";
             updateUI();
-            document.getElementById('hire-btn').innerText = "CLEANER ON ✅";
+
             setInterval(() => {
                 let leaves = document.querySelectorAll('.trash');
-                if (leaves.length > 0) { leaves[0].remove(); dirt--; updateUI(); }
-            }, 3000);
+                if (leaves.length > 0) {
+                    let target = leaves[0];
+                    let leafX = parseFloat(target.style.left);
+                    let cleanerX = parseFloat(cln.style.left);
+
+                    // Image change based on direction
+                    cln.src = (leafX < cleanerX) ? "cleaner_walk_left.png" : "cleaner_walk_right.png";
+                    cln.style.left = leafX + "%";
+
+                    setTimeout(() => {
+                        target.remove();
+                        dirt--;
+                        cln.src = "cleaner_idle.png";
+                        updateUI();
+                    }, 1000);
+                }
+            }, 4000);
         }
     }
 
+    function buyStock() {
+        if (cash >= 20) {
+            cash -= 20; stock++;
+            updateShelves(); updateUI();
+        }
+    }
+
+    function updateShelves() {
+        const slots = document.querySelectorAll('.slot');
+        for(let i=0; i<stock && i<slots.length; i++) slots[i].innerText = "🍎";
+    }
+
     function spawnCustomer() {
-        if (isWaiting) return;
+        if (isWaiting || dirt > 5) return;
         isWaiting = true;
         const cust = document.getElementById('customer-sprite');
         cust.style.left = "40%"; 
         setTimeout(() => {
-            if (Math.random() > 0.5) createLeaf();
-            if (itemsOnShelf.length > 0) document.getElementById('bill-btn').style.display = "block";
+            createLeaf();
+            if (stock > 0) document.getElementById('bill-btn').style.display = "block";
             else setTimeout(customerLeave, 2000);
         }, 1500);
     }
@@ -171,7 +162,7 @@
         const leaf = document.createElement('div');
         leaf.className = 'trash';
         leaf.innerText = '🍃';
-        leaf.style.left = (Math.random() * 50 + 25) + "%";
+        leaf.style.left = (Math.random() * 60 + 20) + "%";
         leaf.style.bottom = "5%";
         leaf.onclick = function() { this.remove(); dirt--; updateUI(); };
         document.getElementById('game-container').appendChild(leaf);
@@ -179,14 +170,10 @@
     }
 
     function processBill() {
-        if (itemsOnShelf.length > 0) {
-            cash += 60;
-            itemsOnShelf.pop();
-            updateShelves();
-            updateUI();
-            document.getElementById('bill-btn').style.display = "none";
-            customerLeave();
-        }
+        cash += 50; stock--;
+        updateShelves(); updateUI();
+        document.getElementById('bill-btn').style.display = "none";
+        customerLeave();
     }
 
     function customerLeave() {
@@ -200,10 +187,10 @@
 
     function updateUI() {
         document.getElementById('cash').innerText = cash;
-        document.getElementById('stock-display').innerText = itemsOnShelf.length;
+        document.getElementById('dirt-count').innerText = dirt;
     }
 
-    setInterval(spawnCustomer, 6000);
+    setInterval(spawnCustomer, 7000);
 </script>
 </body>
 </html>
