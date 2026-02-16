@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Cleaner Edition</title>
+    <title>Shop Simulator - Final Layering</title>
     <style>
         body {
             margin: 0; overflow: hidden; display: flex;
@@ -17,7 +17,7 @@
             border: 5px solid #5d4037; overflow: hidden;
         }
 
-        /* Shelves */
+        /* Shelves Layer (Z-Index: 2) */
         .shelf-container {
             position: absolute; top: 10%; width: 90%;
             display: flex; justify-content: space-around; z-index: 2;
@@ -34,33 +34,37 @@
             background: #5d4037; border-top: 8px solid #4a332a; z-index: 1;
         }
 
-        .counter {
-            position: absolute; bottom: 25%; width: 380px; height: 100px;
-            background: #8b4513; border: 5px solid #5d4037; z-index: 10;
-        }
-
-        /* Characters */
+        /* Player Layer (Z-Index: 5) - Counter ke peeche */
         #player-sprite {
             position: absolute; bottom: 30%; width: 220px; 
             left: 50%; transform: translateX(-50%);
             z-index: 5; image-rendering: pixelated;
         }
 
-        #customer-sprite {
-            position: absolute; bottom: 18%; left: -300px; 
-            width: 200px; z-index: 20; transition: left 1.5s linear;
-            image-rendering: pixelated;
+        /* Counter Layer (Z-Index: 10) */
+        .counter {
+            position: absolute; bottom: 25%; width: 380px; height: 100px;
+            background: #8b4513; border: 5px solid #5d4037; z-index: 10;
         }
 
-        .cleaner-sprite {
-            position: absolute; bottom: 15%; width: 140px; 
-            z-index: 4; image-rendering: pixelated; 
+        /* Trash Layer (Z-Index: 15) */
+        .trash { position: absolute; font-size: 25px; cursor: pointer; z-index: 15; }
+
+        /* Cleaner Layer (Z-Index: 25) - Counter ke aage */
+        #cleaner-obj {
+            position: absolute; bottom: 8%; width: 150px; 
+            z-index: 25; image-rendering: pixelated; 
             transition: left 1s linear; display: none;
         }
 
-        .trash { position: absolute; font-size: 25px; cursor: pointer; z-index: 15; }
+        /* Customer Layer (Z-Index: 30) - Sabse aage */
+        #customer-sprite {
+            position: absolute; bottom: 15%; left: -300px; 
+            width: 200px; z-index: 30; transition: left 1.5s linear;
+            image-rendering: pixelated;
+        }
 
-        /* UI & Modals */
+        /* UI Panel */
         #ui-panel {
             width: 100%; height: 140px; background: #e1b382;
             border-top: 5px solid #5d4037; display: flex;
@@ -79,8 +83,12 @@
     </div>
 
     <div class="floor"></div>
-    <img src="player.png" id="player-sprite"> <div class="counter"></div>
-    <img src="ladycustomar.png" id="customer-sprite"> <img src="cleaner_idle.png" id="cleaner-obj" class="cleaner-sprite"> <button id="bill-btn" class="game-btn" style="position:absolute; bottom:42%; left:50%; transform:translateX(-50%); background:#f1c40f; color:black; display:none; z-index:150;" onclick="processBill()">SELL 🧾</button>
+    <img src="player.png" id="player-sprite">
+    <div class="counter"></div>
+    <img src="cleaner_idle.png" id="cleaner-obj">
+    <img src="ladycustomar.png" id="customer-sprite">
+    
+    <button id="bill-btn" class="game-btn" style="position:absolute; bottom:42%; left:50%; transform:translateX(-50%); background:#f1c40f; color:black; display:none; z-index:150;" onclick="processBill()">SELL 🧾</button>
 </div>
 
 <div id="ui-panel">
@@ -94,7 +102,7 @@
     let cash = 200, dirt = 0, stock = 0, isWaiting = false, hasCleaner = false;
     let playerPos = 50;
 
-    // --- PLAYER MOVEMENT ---
+    // Movement
     window.addEventListener('keydown', (e) => {
         const player = document.getElementById('player-sprite');
         if (e.key === 'ArrowLeft' && playerPos > 30) playerPos -= 3;
@@ -102,13 +110,13 @@
         player.style.left = playerPos + "%";
     });
 
-    // --- CLEANER LOGIC ---
+    // Cleaner Hire Logic
     function hireCleaner() {
         if (cash >= 150 && !hasCleaner) {
             cash -= 150; hasCleaner = true;
             const cln = document.getElementById('cleaner-obj');
             cln.style.display = 'block';
-            cln.style.left = "10%";
+            cln.style.left = "15%";
             document.getElementById('hire-btn').innerText = "CLEANER ACTIVE ✅";
             updateUI();
 
@@ -119,7 +127,7 @@
                     let leafX = parseFloat(target.style.left);
                     let cleanerX = parseFloat(cln.style.left);
 
-                    // Image change based on direction
+                    // Image change based on walking direction
                     cln.src = (leafX < cleanerX) ? "cleaner_walk_left.png" : "cleaner_walk_right.png";
                     cln.style.left = leafX + "%";
 
@@ -147,12 +155,12 @@
     }
 
     function spawnCustomer() {
-        if (isWaiting || dirt > 5) return;
+        if (isWaiting) return;
         isWaiting = true;
         const cust = document.getElementById('customer-sprite');
         cust.style.left = "40%"; 
         setTimeout(() => {
-            createLeaf();
+            if (Math.random() > 0.4) createLeaf();
             if (stock > 0) document.getElementById('bill-btn').style.display = "block";
             else setTimeout(customerLeave, 2000);
         }, 1500);
