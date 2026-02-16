@@ -2,95 +2,114 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator Pro - Frame Edition</title>
+    <title>Shop Simulator - UI in Skin Area</title>
     <style>
-        /* Window ke bahar Skin Color add kiya gaya hai */
         body { 
-            background: #f3c592; 
+            background: #f3c592; /* Skin color outer area */
             margin: 0; 
             display: flex; 
+            flex-direction: column;
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
             overflow: hidden;
-            font-family: 'Courier New', monospace; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
+        /* Game Screen Container */
         #game-window {
             position: relative; 
             width: 800px; 
-            height: 800px;
+            height: 600px; /* Thoda chota kiya taaki UI buttons niche fit ho sakein */
             background: #222 url('background.png') no-repeat center;
             background-size: 100% 100%; 
-            border: 12px solid #5d4037; /* Dark wood border */
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            overflow: hidden; /* Sab kuch image ke andar rahega */
+            border: 8px solid #5d4037; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden; 
         }
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* 2 SHELVES - Zameen par fix */
-        .shelf { width: 170px; bottom: 390px; z-index: 1; }
+        /* 2 SHELVES - Bottom par fixed */
+        .shelf { width: 150px; bottom: 280px; z-index: 1; }
         #s1 { left: 80px; } 
-        #s2 { left: 550px; } 
+        #s2 { left: 570px; } 
 
         /* PLAYER & COUNTER */
-        #player { width: 220px; bottom: 395px; left: 290px; z-index: 5; }
-        #counter { width: 340px; bottom: 250px; left: 230px; z-index: 10; }
+        #player { width: 180px; bottom: 290px; left: 310px; z-index: 5; }
+        #counter { width: 300px; bottom: 180px; left: 250px; z-index: 10; }
 
-        /* CUSTOMER - Zameen par chalte hue */
+        /* CUSTOMER */
         #customer { 
-            width: 260px; bottom: 30px; 
+            width: 220px; bottom: 20px; 
             left: -300px; 
             z-index: 20; transition: all 1.5s linear; 
         }
 
-        /* CUSTOMER TEXT */
-        #finding-text {
-            position: absolute; width: 200px; text-align: center;
-            color: #000; font-weight: bold; font-size: 18px;
-            background: #fff; padding: 8px; border: 3px solid #000;
-            border-radius: 10px; display: none; z-index: 30;
+        /* Status Bubble over Customer */
+        #speech-bubble {
+            position: absolute; background: white; padding: 5px 10px;
+            border-radius: 10px; border: 2px solid black; font-weight: bold;
+            display: none; z-index: 30; font-size: 14px;
         }
 
-        /* HUD & BUTTONS */
-        #hud {
-            position: absolute; top: 20px; width: 100%;
-            display: flex; justify-content: space-around; z-index: 100;
+        /* --- UI PANEL (Skin Color Area) --- */
+        #ui-panel {
+            width: 800px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #e1b382; /* Slightly darker skin for contrast */
+            border-radius: 0 0 15px 15px;
+            border: 4px solid #5d4037;
+            margin-top: -4px; /* Attaches to game window */
         }
-        .stats { background: rgba(0,0,0,0.9); color: #0f0; padding: 10px 20px; border: 2px solid #0f0; border-radius: 8px; font-size: 22px; }
 
-        #controls {
-            position: absolute; bottom: 30px; width: 100%;
-            display: flex; justify-content: center; gap: 20px; z-index: 100;
+        .stats-container { display: flex; gap: 20px; }
+        .stat-item { 
+            background: #5d4037; color: white; padding: 10px 15px; 
+            border-radius: 8px; font-weight: bold; font-size: 18px;
+            min-width: 120px; text-align: center;
         }
 
-        button { padding: 15px 35px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; font-size: 18px; box-shadow: 0 5px #000; }
-        .btn-buy { background: #2980b9; }
-        .btn-refill { background: #e67e22; }
-        button:active { transform: translateY(3px); box-shadow: none; }
+        .button-container { display: flex; gap: 10px; }
+        button { 
+            padding: 12px 20px; cursor: pointer; border: none; 
+            font-weight: bold; border-radius: 8px; color: white; 
+            font-size: 14px; text-transform: uppercase;
+            transition: 0.2s;
+        }
+        .btn-refill { background: #d35400; }
+        .btn-upgrade { background: #27ae60; }
+        button:hover { filter: brightness(1.1); transform: scale(1.05); }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #7f8c8d; cursor: not-allowed; }
+
     </style>
 </head>
 <body>
 
 <div id="game-window">
-    <div id="hud">
-        <div class="stats">💰 $<span id="bal">0</span></div>
-        <div class="stats">📦 STOCK: <span id="stock">5</span>/5</div>
-    </div>
-
-    <div id="finding-text">Checking...</div>
+    <div id="speech-bubble">WANT: MILK</div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
     <img src="shelf_full.png" id="s2" class="sprite shelf">
-
     <img src="player (2).png" id="player" class="sprite">
     <img src="counter.png" id="counter" class="sprite">
     <img src="customer.png" id="customer" class="sprite">
+</div>
 
-    <div id="controls">
-        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">REFILL STOCK ($50)</button>
-        <button class="btn-buy" onclick="levelUp()">UPGRADE SHOP ($200)</button>
+<div id="ui-panel">
+    <div class="stats-container">
+        <div class="stat-item">💰 $<span id="bal">0</span></div>
+        <div class="stat-item">📦 STOCK: <span id="stock">5</span>/5</div>
+        <div class="stat-item">⭐ LVL: <span id="lvl">1</span></div>
+    </div>
+    
+    <div class="button-container">
+        <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">Refill Stock ($50)</button>
+        <button class="btn-upgrade" onclick="levelUp()">Upgrade Shop ($200)</button>
     </div>
 </div>
 
@@ -101,7 +120,7 @@
     let isServing = false;
     const items = ["MILK", "BREAD", "SODA", "EGGS"];
 
-    // HAR 5 SECOND MEIN CUSTOMER AAYEGA
+    // HAR 5 SECOND MEIN CUSTOMER
     setInterval(() => {
         if (!isServing && stock > 0) {
             serveCustomer();
@@ -111,17 +130,16 @@
     function serveCustomer() {
         isServing = true;
         const cust = document.getElementById('customer');
-        const text = document.getElementById('finding-text');
+        const bubble = document.getElementById('speech-bubble');
 
-        // Customer walks in
-        cust.style.left = "270px"; 
+        cust.style.left = "290px"; 
 
         setTimeout(() => {
             const randomItem = items[Math.floor(Math.random() * items.length)];
-            text.innerText = "FINDING: " + randomItem;
-            text.style.display = "block";
-            text.style.left = "300px";
-            text.style.bottom = "320px";
+            bubble.innerText = "ORDER: " + randomItem;
+            bubble.style.display = "block";
+            bubble.style.left = "330px";
+            bubble.style.bottom = "240px";
 
             setTimeout(() => {
                 let profit = 20 + (level * 10);
@@ -130,16 +148,14 @@
                 
                 document.getElementById('bal').innerText = cash;
                 document.getElementById('stock').innerText = stock;
-                text.style.display = "none";
+                bubble.style.display = "none";
 
                 if (stock <= 0) {
-                    document.getElementById('s1').src = 'shelf_full.png'; // Reusing your full/empty logic
                     document.getElementById('s1').src = 'shelf_empty.png';
                     document.getElementById('s2').src = 'shelf_empty.png';
                     document.getElementById('refillBtn').style.display = "block";
                 }
 
-                // Customer walks out
                 cust.style.left = "850px"; 
                 setTimeout(() => {
                     cust.style.transition = "none";
@@ -170,7 +186,8 @@
             cash -= 200;
             level++;
             document.getElementById('bal').innerText = cash;
-            alert("Shop Upgraded!");
+            document.getElementById('lvl').innerText = level;
+            alert("Level Up! Profit increased!");
         }
     }
 </script>
