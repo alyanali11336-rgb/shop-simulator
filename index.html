@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Perspective Fixed</title>
+    <title>Shop Simulator - Grounded Fix</title>
     <style>
         body { 
             background: #000; margin: 0; display: flex; justify-content: center; 
@@ -18,28 +18,29 @@
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* LAYER 1: Shelves in the very back */
-        .shelf { width: 140px; top: 150px; z-index: 1; }
-        #s1 { left: 100px; } #s2 { left: 330px; } #s3 { left: 560px; }
+        /* --- 2 SHELVES ATTACHED TO GROUND --- */
+        .shelf { width: 180px; bottom: 380px; z-index: 1; }
+        #s1 { left: 120px; } 
+        #s2 { left: 500px; } 
 
-        /* LAYER 2: Player stands in front of shelves, but behind counter */
+        /* --- PLAYER & COUNTER --- */
         #player { width: 200px; bottom: 380px; left: 300px; z-index: 5; }
+        #counter { width: 340px; bottom: 250px; left: 230px; z-index: 10; }
 
-        /* LAYER 3: Small counter in front of player */
-        #counter { width: 300px; bottom: 260px; left: 250px; z-index: 10; }
-
-        /* LAYER 4: Big customer in the very front floor area */
+        /* --- CUSTOMER WALKING ON GROUND --- */
         #customer { 
-            width: 250px; bottom: 20px; left: -350px; 
-            z-index: 20; transition: all 1.2s ease-in-out; 
+            width: 260px; 
+            bottom: 30px; /* Attached to the bottom floor tiles */
+            left: -400px; 
+            z-index: 20; 
+            transition: all 1.2s ease-in-out; 
         }
 
-        /* Customer Thought Text */
         #finding-text {
-            position: absolute; width: 200px; text-align: center;
-            color: white; font-weight: bold; font-size: 20px;
-            background: rgba(0,0,0,0.7); padding: 5px; border-radius: 5px;
-            display: none; z-index: 30;
+            position: absolute; width: 220px; text-align: center;
+            color: #0f0; font-weight: bold; font-size: 22px;
+            background: rgba(0,0,0,0.8); padding: 8px; border: 2px solid #0f0;
+            border-radius: 5px; display: none; z-index: 30;
         }
 
         /* UI HUD */
@@ -47,34 +48,32 @@
             position: absolute; top: 20px; width: 100%;
             display: flex; justify-content: space-around; z-index: 100;
         }
-        .stats { background: rgba(0,0,0,0.9); color: #0f0; padding: 10px 20px; border: 2px solid #0f0; border-radius: 8px; font-size: 22px; }
+        .stats { background: rgba(0,0,0,0.9); color: #fff; padding: 10px 20px; border: 2px solid #555; border-radius: 8px; font-size: 22px; }
 
         #controls {
             position: absolute; bottom: 30px; width: 100%;
             display: flex; justify-content: center; gap: 15px; z-index: 100;
         }
 
-        button { padding: 15px 35px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; font-size: 18px; }
-        .btn-sale { background: #27ae60; }
-        .btn-upgrade { background: #2980b9; }
-        .btn-refill { background: #e67e22; }
-        button:disabled { background: #555; opacity: 0.7; }
+        button { padding: 15px 35px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; font-size: 18px; transition: 0.1s; }
+        .btn-sale { background: #27ae60; box-shadow: 0 5px #1e8449; }
+        .btn-upgrade { background: #2980b9; box-shadow: 0 5px #1b4f72; }
+        .btn-refill { background: #e67e22; box-shadow: 0 5px #a05817; }
+        button:active { transform: translateY(3px); box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div id="game-window">
     <div id="hud">
-        <div class="stats">CASH: $<span id="bal">0</span></div>
-        <div class="stats">LEVEL: <span id="lvl">1</span></div>
-        <div class="stats">STOCK: <span id="stock">5</span>/5</div>
+        <div class="stats">💰 $<span id="bal">0</span></div>
+        <div class="stats">📦 STOCK: <span id="stock">5</span>/5</div>
     </div>
 
-    <div id="finding-text">Finding: Milk</div>
+    <div id="finding-text">Checking for items...</div>
 
     <img src="shelf_full.png" id="s1" class="sprite shelf">
     <img src="shelf_full.png" id="s2" class="sprite shelf">
-    <img src="shelf_full.png" id="s3" class="sprite shelf">
 
     <img src="player (2).png" id="player" class="sprite">
 
@@ -85,7 +84,7 @@
     <div id="controls">
         <button id="saleBtn" class="btn-sale" onclick="startSale()">SELL TO CUSTOMER</button>
         <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">REFILL SHELVES ($50)</button>
-        <button class="btn-upgrade" onclick="levelUp()">UPGRADE SHOP ($200)</button>
+        <button class="btn-upgrade" onclick="levelUp()">BUY UPGRADE ($200)</button>
     </div>
 </div>
 
@@ -93,7 +92,7 @@
     let cash = 0;
     let stock = 5;
     let level = 1;
-    const items = ["Milk", "Bread", "Eggs", "Soda", "Fruit"];
+    const items = ["Fresh Milk", "Whole Bread", "Organic Eggs", "Cold Soda"];
 
     function startSale() {
         if (stock <= 0) return;
@@ -104,16 +103,15 @@
 
         saleBtn.disabled = true;
         
-        // Customer walks to counter
-        cust.style.left = "280px"; 
+        // Walk In
+        cust.style.left = "270px"; 
 
-        // Update finding text position
         setTimeout(() => {
             const randomItem = items[Math.floor(Math.random() * items.length)];
-            text.innerText = "Finding: " + randomItem;
+            text.innerText = "BUYING: " + randomItem;
             text.style.display = "block";
-            text.style.left = "310px";
-            text.style.bottom = "280px";
+            text.style.left = "290px";
+            text.style.bottom = "320px";
 
             setTimeout(() => {
                 let gain = 20 + (level * 10);
@@ -124,18 +122,17 @@
                 document.getElementById('stock').innerText = stock;
                 text.style.display = "none";
 
-                // Shelf check
                 if (stock <= 0) {
                     updateShelves('shelf_empty.png');
                     document.getElementById('saleBtn').style.display = "none";
                     document.getElementById('refillBtn').style.display = "block";
                 }
 
-                // Customer leaves
-                cust.style.left = "1100px"; 
+                // Walk Out
+                cust.style.left = "1200px"; 
                 setTimeout(() => {
                     cust.style.transition = "none";
-                    cust.style.left = "-350px";
+                    cust.style.left = "-400px";
                     setTimeout(() => { 
                         cust.style.transition = "all 1.2s ease-in-out"; 
                         if (stock > 0) saleBtn.disabled = false;
@@ -163,15 +160,13 @@
             cash -= 200;
             level++;
             document.getElementById('bal').innerText = cash;
-            document.getElementById('lvl').innerText = level;
-            alert("Shop Level Up! Customers pay more!");
+            alert("Upgrade Bought! Sales are now more profitable.");
         }
     }
 
     function updateShelves(img) {
         document.getElementById('s1').src = img;
         document.getElementById('s2').src = img;
-        document.getElementById('s3').src = img;
     }
 </script>
 
