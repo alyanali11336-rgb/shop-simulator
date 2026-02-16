@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Emoji Edition</title>
+    <title>Shop Simulator - Perfect Gravity</title>
     <style>
         body {
             margin: 0; overflow: hidden; display: flex;
@@ -16,7 +16,7 @@
             justify-content: flex-end; align-items: center;
         }
 
-        /* --- Emoji Racks --- */
+        /* Shelves */
         .shelf-container {
             position: absolute; top: 10%; width: 90%;
             display: flex; justify-content: space-around; z-index: 2;
@@ -46,30 +46,33 @@
             z-index: 5; image-rendering: pixelated;
         }
 
+        /* GRAVITY FIX: Character now walks ON the floor */
         #customer-sprite {
-            position: absolute; bottom: 12%; left: -300px; 
+            position: absolute; 
+            bottom: 22%; /* Fixed from 12% to 22% */
+            left: -300px; 
             width: 220px; z-index: 20; transition: left 1.5s linear;
             image-rendering: pixelated;
         }
 
-        /* --- UI & Buttons --- */
+        /* UI Panel */
         #ui-panel {
             position: absolute; bottom: 0; width: 100%; height: 160px;
             background: #e1b382; border-top: 8px solid #5d4037;
             display: flex; justify-content: center; align-items: center;
-            gap: 20px; z-index: 100;
+            gap: 15px; z-index: 100;
         }
 
         .stat-box {
-            background: #5d4037; color: #f1c40f; padding: 10px 20px;
-            border-radius: 10px; font-size: 20px; font-weight: bold;
-            border: 3px solid #f3c592; min-width: 140px; text-align: center;
+            background: #5d4037; color: #f1c40f; padding: 10px;
+            border-radius: 10px; font-size: 18px; font-weight: bold;
+            border: 3px solid #f3c592; min-width: 120px; text-align: center;
         }
 
         .game-btn {
-            padding: 15px 25px; font-size: 18px; font-weight: bold;
+            padding: 12px 20px; font-size: 16px; font-weight: bold;
             cursor: pointer; border: none; border-radius: 12px;
-            color: white; text-transform: uppercase; box-shadow: 0 6px #a04500;
+            color: white; text-transform: uppercase; box-shadow: 0 4px #a04500;
         }
 
         #bill-btn { 
@@ -108,19 +111,20 @@
     <div class="counter"></div>
     <img src="ladycustomar.png" id="customer-sprite">
     
-    <button id="bill-btn" class="game-btn" onclick="processBill()">SELL ITEM 🧾</button>
+    <button id="bill-btn" class="game-btn">SELL ITEM 🧾</button>
 
     <div id="ui-panel">
         <div class="stat-box">CASH: $<span id="cash">100</span></div>
-        <div class="stat-box">STOCK: <span id="stock">0</span>/8</div>
-        <button class="game-btn" style="background: #27ae60;" onclick="buyItem('🍎', 20)">BUY APPLE ($20)</button>
-        <button class="game-btn" style="background: #3498db;" onclick="buyItem('🥤', 30)">BUY SODA ($30)</button>
-        <button class="game-btn" style="background: #9b59b6;" onclick="buyItem('🧸', 50)">BUY TOY ($50)</button>
+        <div class="stat-box">STOCK: <span id="stock">0</span>/<span id="max-stock">8</span></div>
+        <button class="game-btn" style="background: #27ae60;" onclick="buyItem('🍎', 20)">APPLE ($20)</button>
+        <button class="game-btn" style="background: #3498db;" onclick="buyItem('🥤', 30)">SODA ($30)</button>
+        <button class="game-btn" style="background: #9b59b6;" onclick="buyItem('🧸', 50)">TOY ($50)</button>
+        <button id="upgrade-btn" class="game-btn" style="background: #f39c12;" onclick="upgradeShop()">UPGRADE ($200)</button>
     </div>
 </div>
 
 <script>
-    let cash = 100, stock = 0, isWaiting = false;
+    let cash = 100, stock = 0, isWaiting = false, maxStock = 8;
     let itemsInStock = [];
     const customerImages = ["ladycustomar.png", "it_man.png"];
     const demands = ['🍎', '🥤', '🧸'];
@@ -133,16 +137,16 @@
         const targetDemand = demands[Math.floor(Math.random() * demands.length)];
         
         cust.src = customerImages[Math.floor(Math.random() * customerImages.length)];
-        cust.style.left = "40%"; 
+        cust.style.left = "38%"; 
         
         setTimeout(() => {
             bubble.innerText = "I want: " + targetDemand;
             bubble.style.display = "block";
             
-            // Check if player has demanded item
             if (itemsInStock.includes(targetDemand)) {
-                document.getElementById('bill-btn').style.display = "block";
-                document.getElementById('bill-btn').onclick = () => processBill(targetDemand);
+                const billBtn = document.getElementById('bill-btn');
+                billBtn.style.display = "block";
+                billBtn.onclick = () => processBill(targetDemand);
             } else {
                 bubble.innerText = "No " + targetDemand + "? Bye!";
                 setTimeout(customerLeave, 2000);
@@ -151,19 +155,30 @@
     }
 
     function buyItem(emoji, price) {
-        if (cash >= price && stock < 8) {
+        if (cash >= price && stock < maxStock) {
             cash -= price;
             stock++;
             itemsInStock.push(emoji);
             updateUI();
             updateShelves();
         } else {
-            alert(stock >= 8 ? "Shelf Full!" : "No Cash!");
+            alert(stock >= maxStock ? "Shelf Full! Upgrade please." : "No Cash!");
+        }
+    }
+
+    function upgradeShop() {
+        if (cash >= 200) {
+            cash -= 200;
+            maxStock += 4; // Capacity increases
+            updateUI();
+            alert("Shop Upgraded! Max Stock: " + maxStock);
+        } else {
+            alert("Need $200 for Upgrade!");
         }
     }
 
     function processBill(emoji) {
-        cash += 60; // Selling price
+        cash += 60;
         stock--;
         const index = itemsInStock.indexOf(emoji);
         if (index > -1) itemsInStock.splice(index, 1);
@@ -187,13 +202,15 @@
 
     function updateShelves() {
         for (let i = 1; i <= 8; i++) {
-            document.getElementById('s' + i).innerText = itemsInStock[i-1] || "";
+            const slot = document.getElementById('s' + i);
+            if(slot) slot.innerText = itemsInStock[i-1] || "";
         }
     }
 
     function updateUI() {
         document.getElementById('cash').innerText = cash;
         document.getElementById('stock').innerText = stock;
+        document.getElementById('max-stock').innerText = maxStock;
     }
 
     setInterval(spawnCustomer, 5000);
