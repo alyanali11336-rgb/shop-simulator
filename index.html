@@ -2,63 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Shop Simulator - Final Physics Fix</title>
+    <title>Shop Sim - Grounded Edition</title>
     <style>
         body { 
-            background: #f3c592; /* Skin color outer area */
-            margin: 0; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; 
-            height: 100vh; overflow: hidden;
+            background: #f3c592; margin: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; height: 100vh; overflow: hidden;
             font-family: 'Courier New', monospace; 
         }
         
         #game-window {
             position: relative; width: 800px; height: 600px;
             background: #222 url('background.png') no-repeat center;
-            background-size: 100% 100%; border: 8px solid #5d4037; 
-            overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background-size: 100% 100%; border: 10px solid #5d4037; 
+            overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.4);
         }
 
         .sprite { position: absolute; image-rendering: pixelated; }
 
-        /* --- GRAVITY & ALIGNMENT FIX --- */
+        /* --- FIXED GROUNDED PHYSICS --- */
         
-        /* Shelves: Two grounded against the back wall */
-        .shelf { width: 160px; bottom: 310px; z-index: 1; }
-        #s1 { left: 90px; } 
-        #s2 { left: 550px; } 
+        /* Shelves: Wall se hata kar niche floor par fix kiya */
+        .shelf { width: 170px; bottom: 275px; z-index: 1; }
+        #s1 { left: 70px; } 
+        #s2 { left: 560px; } 
 
-        /* Player: Standing exactly behind the counter on the floor */
-        #player { width: 190px; bottom: 315px; left: 305px; z-index: 5; }
+        /* Player: Perfectly behind the counter floor */
+        #player { width: 185px; bottom: 285px; left: 305px; z-index: 5; }
 
-        /* Counter: Small and sitting on the floor tiles */
-        #counter { width: 320px; bottom: 180px; left: 240px; z-index: 10; }
+        /* Counter: Small and solid on tiles */
+        #counter { width: 310px; bottom: 175px; left: 245px; z-index: 10; }
 
-        /* Customer: Walking in the very front foreground */
+        /* Customers: Walking on front tiles */
         #customer { 
-            width: 240px; bottom: 10px; 
-            left: -300px; z-index: 20; 
-            transition: all 1.5s linear; 
+            bottom: 20px; left: -350px; 
+            z-index: 20; transition: all 1.5s linear; 
         }
 
+        /* Speech Bubble */
         #speech {
-            position: absolute; background: white; padding: 5px 10px;
-            border-radius: 10px; border: 2px solid black; font-weight: bold;
-            display: none; z-index: 30; font-size: 16px;
+            position: absolute; background: white; padding: 8px 12px;
+            border-radius: 12px; border: 3px solid #000; font-weight: bold;
+            display: none; z-index: 30; font-size: 16px; box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
         }
 
-        /* --- UI PANEL (Skin Area) --- */
+        /* --- NEW UI PANEL (Skin Area) --- */
         #ui-panel {
-            width: 800px; padding: 20px; display: flex;
+            width: 800px; padding: 25px; display: flex;
             justify-content: space-between; align-items: center;
-            background: #e1b382; border: 4px solid #5d4037;
-            border-radius: 0 0 15px 15px; margin-top: -4px;
+            background: #e1b382; border: 5px solid #5d4037;
+            border-radius: 0 0 20px 20px; margin-top: -5px;
         }
 
-        .stat-item { background: #5d4037; color: white; padding: 10px; border-radius: 8px; font-weight: bold; }
-        button { padding: 12px 25px; cursor: pointer; border: none; font-weight: bold; border-radius: 8px; color: white; }
+        .stat-group { display: flex; gap: 15px; }
+        .stat-card { 
+            background: #5d4037; color: #fff; padding: 12px 20px; 
+            border-radius: 10px; font-weight: bold; font-size: 18px;
+            box-shadow: inset 0 -4px 0 rgba(0,0,0,0.3);
+        }
+
+        .goal-text { font-weight: bold; color: #5d4037; font-size: 20px; }
+
+        .btn-group { display: flex; gap: 12px; }
+        button { 
+            padding: 15px 30px; cursor: pointer; border: none; 
+            font-weight: bold; border-radius: 10px; color: white;
+            text-transform: uppercase; transition: 0.2s;
+            box-shadow: 0 5px 0 rgba(0,0,0,0.2);
+        }
         .btn-refill { background: #d35400; }
         .btn-upgrade { background: #27ae60; }
+        button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        button:active { transform: translateY(2px); box-shadow: none; }
+        button:disabled { background: #7f8c8d; cursor: not-allowed; transform: none; }
     </style>
 </head>
 <body>
@@ -74,11 +89,14 @@
 </div>
 
 <div id="ui-panel">
-    <div style="display:flex; gap:15px;">
-        <div class="stat-item">💰 $<span id="bal">0</span></div>
-        <div class="stat-item">📦 STOCK: <span id="stock">5</span>/5</div>
+    <div class="stat-group">
+        <div class="stat-card">💰 $<span id="bal">0</span></div>
+        <div class="stat-card">📦 STOCK: <span id="stock">5</span>/5</div>
     </div>
-    <div style="display:flex; gap:10px;">
+
+    <div class="goal-text">🎯 GOAL: $<span id="goal">100</span></div>
+
+    <div class="btn-group">
         <button id="refillBtn" class="btn-refill" onclick="refill()" style="display:none">Refill ($50)</button>
         <button class="btn-upgrade" onclick="levelUp()">Upgrade ($200)</button>
     </div>
@@ -87,11 +105,12 @@
 <script>
     let cash = 0;
     let stock = 5;
+    let level = 1;
+    let dailyGoal = 100;
     let isServing = false;
-    // Added your new lady customer file name
-    const customerImages = ["customer.png", "lady_customer.png"]; 
-    const items = ["MILK", "BREAD", "SODA"];
+    const items = ["MILK", "BREAD", "SODA", "EGGS", "FRUIT"];
 
+    // AUTOMATION: Every 5 seconds
     setInterval(() => {
         if (!isServing && stock > 0) serveCustomer();
     }, 5000);
@@ -101,23 +120,34 @@
         const cust = document.getElementById('customer');
         const speech = document.getElementById('speech');
 
-        // Randomly pick between man or lady customer
-        cust.src = customerImages[Math.floor(Math.random() * customerImages.length)];
+        // Randomly pick customer and set size
+        const isLady = Math.random() > 0.5;
+        cust.src = isLady ? "lady_customer.png" : "customer.png";
+        cust.style.width = isLady ? "260px" : "220px"; // Lady thodi badi hai
         
-        cust.style.left = "280px"; 
+        cust.style.left = "290px"; 
 
         setTimeout(() => {
-            speech.innerText = "BUY: " + items[Math.floor(Math.random() * items.length)];
+            speech.innerText = "I WANT: " + items[Math.floor(Math.random() * items.length)];
             speech.style.display = "block";
-            speech.style.left = "320px";
+            speech.style.left = "330px";
             speech.style.bottom = "240px";
 
             setTimeout(() => {
-                cash += 25;
+                let profit = 20 + (level * 10);
+                cash += profit;
                 stock--;
+                
                 document.getElementById('bal').innerText = cash;
                 document.getElementById('stock').innerText = stock;
                 speech.style.display = "none";
+
+                // Check Goal
+                if (cash >= dailyGoal) {
+                    dailyGoal += 150;
+                    document.getElementById('goal').innerText = dailyGoal;
+                    alert("Daily Goal Complete! Target increased.");
+                }
 
                 if (stock <= 0) {
                     document.getElementById('s1').src = 'shelf_empty.png';
@@ -125,10 +155,10 @@
                     document.getElementById('refillBtn').style.display = "block";
                 }
 
-                cust.style.left = "850px"; 
+                cust.style.left = "900px"; 
                 setTimeout(() => {
                     cust.style.transition = "none";
-                    cust.style.left = "-300px";
+                    cust.style.left = "-350px";
                     setTimeout(() => { 
                         cust.style.transition = "all 1.5s linear"; 
                         isServing = false;
@@ -147,6 +177,15 @@
             document.getElementById('s1').src = 'shelf_full.png';
             document.getElementById('s2').src = 'shelf_full.png';
             document.getElementById('refillBtn').style.display = "none";
+        }
+    }
+
+    function levelUp() {
+        if (cash >= 200) {
+            cash -= 200;
+            level++;
+            document.getElementById('bal').innerText = cash;
+            alert("Shop Upgraded! Profits are now higher.");
         }
     }
 </script>
